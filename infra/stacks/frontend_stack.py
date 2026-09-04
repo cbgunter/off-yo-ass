@@ -61,7 +61,14 @@ class FrontendStack(Stack):
                 cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
             ),
             additional_behaviors={
-                "/api/*": cloudfront.BehaviorOptions(
+                # No leading slash — CloudFront strips it from the incoming
+                # URI before matching path patterns, so "/api/*" silently
+                # never matches anything and every request falls through to
+                # the default (S3) behavior. Confirmed the hard way: S3 404s
+                # on the nonexistent "api/health" key, and the SPA fallback
+                # below quietly turned that into a 200 index.html response,
+                # masking a completely unrouted API.
+                "api/*": cloudfront.BehaviorOptions(
                     origin=api_origin,
                     viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
@@ -69,7 +76,20 @@ class FrontendStack(Stack):
                     # Lambda unmodified, and responses are never cached —
                     # they carry per-user, per-moment state.
                     cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
-                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                    # NOT ALL_VIEWER: that policy forwards the viewer's
+                    # original Host header (oya.caseyhunter.net) straight
+                    # through to API Gateway, which rejects any Host that
+                    # doesn't match its own execute-api domain with a bare
+                    # 403 — silently turned into a fake 200 index.html by
+                    # the SPA fallback below. Confirmed by reproducing it
+                    # directly: curl -H "Host: oya.caseyhunter.net" against
+                    # the execute-api domain returns 403 ForbiddenException.
+                    # This managed policy forwards everything else (cookies,
+                    # headers, query strings) but lets CloudFront set Host
+                    # to the origin's own domain, as a custom origin needs.
+                    origin_request_policy=(
+                        cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER
+                    ),
                 ),
             },
             # React Router owns client-side routing — a direct load of

@@ -55,4 +55,8 @@ jobs:
       - working-directory: infra
         run: uv sync
       - working-directory: infra
+        run: uv run ruff check .
+      - working-directory: infra
+        run: uv run pytest -q
+      - working-directory: infra
         run: npx --yes aws-cdk@2 synth --all
