@@ -63,13 +63,18 @@ class WorkersStack(Stack):
 
         table.grant_read_write_data(fn)
 
-        garmin_tokenstore_arn = (
-            f"arn:aws:ssm:{self.region}:{self.account}:parameter{GARMIN_TOKENSTORE_PREFIX}/*"
+        garmin_tokenstore_base_arn = (
+            f"arn:aws:ssm:{self.region}:{self.account}:parameter{GARMIN_TOKENSTORE_PREFIX}"
         )
         fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["ssm:GetParametersByPath", "ssm:GetParameter", "ssm:PutParameter"],
-                resources=[garmin_tokenstore_arn],
+                # Confirmed the hard way (real AccessDeniedException on a
+                # manual invoke): GetParametersByPath authorizes against
+                # the bare path ARN, not the "/*" children pattern that
+                # GetParameter/PutParameter need — both forms are
+                # required together, one alone isn't enough for either.
+                resources=[garmin_tokenstore_base_arn, f"{garmin_tokenstore_base_arn}/*"],
             )
         )
         fn.add_to_role_policy(

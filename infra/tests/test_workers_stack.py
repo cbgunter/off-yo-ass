@@ -40,3 +40,31 @@ def test_nightly_sync_runs_on_a_real_wall_clock_time_not_bare_utc():
     assert props["ScheduleExpressionTimezone"] == "America/New_York"
     assert props["ScheduleExpression"] == "cron(30 4 * * ? *)"
     assert props["State"] == "ENABLED"
+
+
+def test_garmin_tokenstore_policy_grants_both_the_bare_path_and_its_children():
+    """Confirmed the hard way against the real deployed stack:
+    ssm:GetParametersByPath authorizes against the bare path ARN
+    ("/oya/garmin/tokenstore"), while GetParameter/PutParameter need the
+    "/*" children pattern — a policy granting only one of the two fails
+    with AccessDeniedException on whichever action needs the other. This
+    locks in that both are present together.
+    """
+    template = _synth_workers_template()
+
+    statements = [
+        stmt
+        for policy in template.find_resources("AWS::IAM::Policy").values()
+        for stmt in policy["Properties"]["PolicyDocument"]["Statement"]
+        if "ssm:GetParametersByPath" in _as_list(stmt["Action"])
+    ]
+    assert len(statements) == 1
+
+    resources = _as_list(statements[0]["Resource"])
+    base = "arn:aws:ssm:us-east-1:123456789012:parameter/oya/garmin/tokenstore"
+    assert base in resources
+    assert f"{base}/*" in resources
+
+
+def _as_list(value):
+    return value if isinstance(value, list) else [value]
