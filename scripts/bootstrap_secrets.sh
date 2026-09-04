@@ -8,6 +8,13 @@
 # invalidates every existing session (everyone has to sign in again).
 set -euo pipefail
 
+# Git Bash on Windows rewrites a leading-slash argument as if it were a
+# POSIX path (MSYS path conversion), turning "/oya/session-secret" into
+# something like "C:/Program Files/Git/oya/session-secret" before the AWS
+# CLI ever sees it. This opts the whole process out of that rewriting;
+# it's a no-op on real POSIX shells.
+export MSYS_NO_PATHCONV=1
+
 PARAM_NAME="/oya/session-secret"
 VALUE="$(openssl rand -base64 48)"
 
