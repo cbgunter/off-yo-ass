@@ -10,6 +10,15 @@ GITHUB_OIDC_PROVIDER_ARN = (
 )
 GITHUB_REPO = "cbgunter/off-yo-ass"
 
+# GitHub's OIDC `sub` claim embeds immutable numeric IDs alongside the
+# owner/repo names — confirmed via `gh api users/cbgunter --jq .id` (user)
+# and `gh api repos/cbgunter/off-yo-ass --jq .id` (repo), and matches what
+# CloudTrail actually recorded for a real failed AssumeRoleWithWebIdentity
+# call. AWS separately *requires* the trust policy to constrain `sub` (or
+# job_workflow_ref) directly — a condition on `repository` alone is
+# rejected as "not scoped to all" — so both conditions are needed together.
+GITHUB_SUB_PATTERN = "repo:cbgunter@10583645/off-yo-ass@1357467340:*"
+
 
 class GithubOidcStack(Stack):
     """A deploy role for GitHub Actions, trusted only by this repo.
@@ -38,10 +47,11 @@ class GithubOidcStack(Stack):
                 provider.open_id_connect_provider_arn,
                 conditions={
                     "StringEquals": {
-                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                        "token.actions.githubusercontent.com:repository": GITHUB_REPO,
                     },
                     "StringLike": {
-                        "token.actions.githubusercontent.com:sub": f"repo:{GITHUB_REPO}:*"
+                        "token.actions.githubusercontent.com:sub": GITHUB_SUB_PATTERN,
                     },
                 },
                 assume_role_action="sts:AssumeRoleWithWebIdentity",
