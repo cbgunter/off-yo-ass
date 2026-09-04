@@ -155,6 +155,42 @@ img {
   margin-top: var(--space-5);
 }
 
+/* ---------- Form fields ---------- */
+/* Not in BRANDING.md's component list — phase 1's quick-log forms are the
+   first real input fields in the app. Matches the button language (2px
+   radius, hairline border, tabular mono for numbers) rather than
+   inventing a separate visual system. */
+
+.field-label {
+  display: block;
+  font-family: var(--font-text);
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-2);
+}
+
+.input {
+  appearance: none;
+  border-radius: var(--radius);
+  min-height: var(--button-height);
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+}
+
+.input:focus {
+  outline: 1px solid var(--clay);
+  outline-offset: -1px;
+}
+
 /* ---------- Buttons ---------- */
 
 .btn {

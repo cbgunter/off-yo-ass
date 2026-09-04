@@ -4,6 +4,7 @@ import { Nav } from '@/components/Nav'
 import { SignIn } from '@/routes/SignIn'
 import { Dashboard } from '@/routes/Dashboard'
 import { Sources } from '@/routes/Sources'
+import { Log } from '@/routes/Log'
 
 function Gate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -42,6 +43,14 @@ function AppRoutes() {
         element={
           <Gate>
             <Sources />
+          </Gate>
+        }
+      />
+      <Route
+        path="/log"
+        element={
+          <Gate>
+            <Log />
           </Gate>
         }
       />

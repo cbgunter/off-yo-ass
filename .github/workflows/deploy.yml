@@ -30,10 +30,12 @@ jobs:
       - name: Build web app
         working-directory: web
         env:
-          # Not secret — the Google client ID is public by design. Set as
-          # a plain repo variable once the phase-2 Google Cloud project
-          # exists; empty is a valid placeholder until then.
+          # Neither is secret — both are public by design (the OAuth
+          # client ID and the Web Push applicationServerKey). Set as
+          # plain repo variables; empty is a valid placeholder until the
+          # corresponding bootstrap step has run.
           VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
         run: |
           npm ci
           npm run build
@@ -58,7 +60,8 @@ jobs:
         env:
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           ALLOWED_EMAIL: cbgunter@gmail.com
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
         run: >
           npx --yes aws-cdk@2 deploy
-          OyaNetwork OyaData OyaApi OyaFrontend
+          OyaNetwork OyaData OyaApi OyaFrontend OyaWorkers
           --require-approval never

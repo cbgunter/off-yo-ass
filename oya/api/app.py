@@ -6,9 +6,17 @@ request."""
 from fastapi import FastAPI
 
 from oya.api.auth import router as auth_router
+from oya.api.dashboard import router as dashboard_router
+from oya.api.push import router as push_router
+from oya.api.quicklog import router as quicklog_router
+from oya.api.sources import router as sources_router
 
 app = FastAPI(title="Off Yo Ass API")
 app.include_router(auth_router)
+app.include_router(dashboard_router)
+app.include_router(sources_router)
+app.include_router(quicklog_router)
+app.include_router(push_router)
 
 
 @app.get("/api/health")

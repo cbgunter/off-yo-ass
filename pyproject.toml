@@ -11,6 +11,8 @@ dependencies = [
   "google-auth>=2.35,<3",
   "pyjwt>=2.9,<3",
   "requests>=2.32,<3",
+  "garminconnect>=0.2.24,<0.3",
+  "pywebpush>=2.0,<3",
 ]
 
 [dependency-groups]
@@ -19,6 +21,12 @@ dev = [
   "httpx>=0.27",
   "uvicorn[standard]>=0.32",
   "ruff>=0.7",
+  # boto3 ships in the Lambda runtime image itself (see oya/settings.py) and
+  # is deliberately excluded from the deploy package by
+  # scripts/build_lambda.sh — needed here only for local dev/test against a
+  # real or moto-mocked DynamoDB/SSM.
+  "boto3>=1.35",
+  "moto[dynamodb]>=5.0",
 ]
 
 [tool.pytest.ini_options]

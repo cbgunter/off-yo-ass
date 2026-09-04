@@ -1,4 +1,4 @@
-from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import CfnOutput, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as dynamodb
 from constructs import Construct
 
@@ -36,3 +36,10 @@ class DataStack(Stack):
             partition_key=dynamodb.Attribute(name="date", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="sk", type=dynamodb.AttributeType.STRING),
         )
+
+        # CDK auto-generates the actual table name (e.g.
+        # OyaData-TableCD117FA1-...) — an explicit, named output is what
+        # lets scripts/weekly_health_check.py look it up from outside the
+        # CDK app, via `aws cloudformation describe-stacks`, without
+        # hardcoding that generated name anywhere.
+        CfnOutput(self, "TableName", value=self.table.table_name, export_name="OyaDataTableName")

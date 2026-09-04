@@ -13,6 +13,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // injectManifest, not the default generateSW: a custom `push`
+      // event handler (web/src/sw.ts) needs a service worker source file
+      // to add it to — generateSW has no hook for that.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,woff2}'],
+      },
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
@@ -32,22 +41,6 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
-          },
-        ],
-      },
-      workbox: {
-        // Cache the app shell; data always comes from the network — a stale
-        // dashboard reading as fresh is worse than an honest offline state.
-        globPatterns: ['**/*.{js,css,html,woff2}'],
-        navigateFallback: '/index.html',
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
           },
         ],
       },

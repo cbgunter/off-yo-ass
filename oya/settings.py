@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     session_cookie_name: str = "oya_session"
     session_ttl_days: int = 30
 
+    table_name: str = ""
+
+    # VAPID keypair for Web Push. The private key is fetched from SSM by
+    # name, same pattern as the session secret; the public key isn't
+    # secret and is passed through as a plain env var.
+    vapid_public_key: str = ""
+    vapid_private_key_param: str = ""
+    vapid_subject: str = "mailto:cbgunter@gmail.com"
+
+    garmin_tokenstore_prefix: str = "/oya/garmin/tokenstore"
+
     @property
     def cookie_secure(self) -> bool:
         # Secure cookies aren't sent back over plain http, which is what
@@ -49,6 +60,11 @@ class Settings(BaseSettings):
         if self.session_secret_param:
             return _fetch_ssm_secret(self.session_secret_param)
         return "dev-insecure-secret-change-me"
+
+    def resolved_vapid_private_key(self) -> str:
+        if not self.vapid_private_key_param:
+            raise RuntimeError("OYA_VAPID_PRIVATE_KEY_PARAM is not configured")
+        return _fetch_ssm_secret(self.vapid_private_key_param)
 
 
 @lru_cache

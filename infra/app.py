@@ -7,6 +7,7 @@ from stacks.data_stack import DataStack
 from stacks.frontend_stack import FrontendStack
 from stacks.github_oidc_stack import GithubOidcStack
 from stacks.network_stack import NetworkStack
+from stacks.workers_stack import WorkersStack
 
 app = cdk.App()
 
@@ -41,6 +42,18 @@ FrontendStack(
     hosted_zone=network.hosted_zone,
     certificate=network.certificate,
     http_api=api.http_api,
+    env=env,
+)
+
+WorkersStack(
+    app,
+    "OyaWorkers",
+    table=data.table,
+    # Not secret — the applicationServerKey a browser needs to subscribe
+    # to push is public by design. Generated once by
+    # scripts/bootstrap_vapid.py, set as a plain GitHub Actions repo
+    # variable the same way GOOGLE_CLIENT_ID is.
+    vapid_public_key=os.environ.get("VAPID_PUBLIC_KEY", ""),
     env=env,
 )
 
