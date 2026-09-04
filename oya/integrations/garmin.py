@@ -90,11 +90,17 @@ def fetch_day(day: date) -> DayMetrics:
     battery_days = client.get_body_battery(iso) or []
     if battery_days:
         levels = battery_days[0].get("bodyBatteryValuesArray") or []
-        if levels:
-            # Each entry is [timestamp_ms, level, ...]. Garmin has no
-            # single "at wake" field, so the first reading of the day
-            # stands in for it — a documented approximation, not a bug.
-            metrics.body_battery_at_wake = levels[0][1]
+        # Each entry is [timestamp_ms, level, ...]. Garmin has no single
+        # "at wake" field, so the first *real* reading of the day stands
+        # in for it — a documented approximation, not a bug. Confirmed
+        # against a real account that the array's leading entries are
+        # often [timestamp, null] placeholders before the watch takes its
+        # first actual measurement, so this has to skip nulls rather than
+        # blindly take index 0 — that was the actual bug.
+        for entry in levels:
+            if len(entry) > 1 and entry[1] is not None:
+                metrics.body_battery_at_wake = entry[1]
+                break
 
     stats = client.get_stats(iso) or {}
     metrics.steps = stats.get("totalSteps")

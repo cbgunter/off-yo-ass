@@ -1,0 +1,52 @@
+{
+  "_source": "Trimmed from a real sync against a live account on 2026-09-04 (for 2026-09-03). Arrays shortened to representative entries; structure and the null-prefix quirk in bodyBatteryValuesArray are preserved as-observed — that quirk is what caused a real bug in oya/integrations/garmin.py (took index 0 blindly, which was a null placeholder, instead of the first real reading).",
+  "sleep": {
+    "dailySleepDTO": {
+      "calendarDate": "2026-09-03",
+      "sleepTimeSeconds": null,
+      "sleepScores": null
+    }
+  },
+  "heart_rates": {
+    "calendarDate": "2026-09-03",
+    "restingHeartRate": 62,
+    "lastSevenDaysAvgRestingHeartRate": 60
+  },
+  "hrv": {
+    "hrvSummary": {
+      "calendarDate": "2026-09-03",
+      "weeklyAvg": 32,
+      "lastNightAvg": null,
+      "status": "UNBALANCED"
+    }
+  },
+  "stress": {
+    "calendarDate": "2026-09-03",
+    "avgStressLevel": 40,
+    "maxStressLevel": 98
+  },
+  "body_battery": [
+    {
+      "date": "2026-09-03",
+      "bodyBatteryValuesArray": [
+        [1788408000000, null],
+        [1788408000001, null],
+        [1788458040000, 49],
+        [1788464340000, 41],
+        [1788465600000, 40],
+        [1788488640000, 19]
+      ]
+    }
+  ],
+  "stats": {
+    "calendarDate": "2026-09-03",
+    "totalSteps": 1591,
+    "restingHeartRate": 62,
+    "averageStressLevel": 40
+  },
+  "weight": {
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-03",
+    "dateWeightList": []
+  }
+}
