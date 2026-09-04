@@ -38,8 +38,16 @@ def main() -> None:
     )
 
     with tempfile.TemporaryDirectory(prefix="garmin-bootstrap-") as tokendir:
-        client.login(tokendir)
+        # login(path) unconditionally tries to *load* tokens from that
+        # path first (garth.load), and raises a bare FileNotFoundError —
+        # not caught internally — when the directory is empty, instead of
+        # falling through to credential login. Confirmed against a real
+        # account: calling login(tokendir) on a fresh empty dir crashes
+        # every time. The fix is to log in with no path (credential-only
+        # flow) and save the resulting tokens explicitly afterward.
+        client.login()
         print("Logged in. Uploading session tokens to SSM...")
+        client.garth.dump(tokendir)
 
         ssm = boto3.client("ssm")
         count = 0
