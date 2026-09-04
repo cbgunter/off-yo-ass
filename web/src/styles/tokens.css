@@ -1,0 +1,54 @@
+/**
+ * Design tokens — the single source of truth for color, type, and space.
+ *
+ * This file is a direct translation of /BRANDING.md. Nothing else in this
+ * app is allowed to hardcode a color, a font-size, or a spacing value —
+ * that discipline is what keeps six screens from drifting apart. If a
+ * value isn't here, it doesn't belong on screen; add it here first.
+ */
+
+:root {
+  /* ---- Surfaces ---- */
+  --paper: #f5f2ec; /* app background */
+  --paper-sunk: #efebe3; /* inset rows, table stripes */
+  --rule: #ddd7cb; /* hairlines, dividers, borders */
+
+  /* ---- Text ---- */
+  --ink: #26231e; /* headlines, primary numbers */
+  --ink-soft: #5a554b; /* body copy */
+  --ink-faint: #8c8578; /* labels, units, timestamps */
+
+  /* ---- Accent — one, used sparingly. At most twice per screen. ---- */
+  --clay: #b4593c; /* prescription, active state, the call */
+  --clay-sunk: #f0ded6; /* accent fill behind text */
+
+  /* ---- Signal — baseline deltas only, never decoration ---- */
+  --above: #4a6b4f; /* better than baseline */
+  --below: #9a5238; /* worse than baseline */
+
+  /* ---- Type ---- */
+  --font-display: 'Instrument Serif', Georgia, serif; /* 400 only */
+  --font-text: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ---- Spacing scale — nothing between these ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---- Shape ---- */
+  --radius: 2px; /* buttons and inputs only — 0 everywhere else */
+  --screen-pad-x: 20px;
+  --screen-pad-top: 24px;
+
+  /* ---- Touch ---- */
+  --tap-min: 44px;
+  --button-height: 48px;
+
+  color-scheme: light; /* no dark mode in v1 — warm-light only */
+}

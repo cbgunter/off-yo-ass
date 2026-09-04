@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: astral-sh/setup-uv@v3
+
+      - name: Build web app
+        working-directory: web
+        env:
+          # Not secret — the Google client ID is public by design. Set as
+          # a plain repo variable once the phase-2 Google Cloud project
+          # exists; empty is a valid placeholder until then.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Lambda package
+        run: bash scripts/build_lambda.sh
+
+      # Assumes GitHubActionsOffYoAssRole (infra/stacks/github_oidc_stack.py),
+      # which is deployed once by hand — this workflow never creates or
+      # modifies its own trust role.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::466850516129:role/GitHubActionsOffYoAssRole
+          aws-region: us-east-1
+
+      - working-directory: infra
+        run: uv sync
+
+      - name: cdk deploy
+        working-directory: infra
+        env:
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          ALLOWED_EMAIL: cbgunter@gmail.com
+        run: >
+          npx --yes aws-cdk@2 deploy
+          OyaNetwork OyaData OyaApi OyaFrontend
+          --require-approval never

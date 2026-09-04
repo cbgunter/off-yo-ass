@@ -1,0 +1,219 @@
+@import './tokens.css';
+
+/* ---------- Reset ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font-family: inherit;
+  color: inherit;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* No gradients, no shadows, no glows, no glass, no blur — anywhere. */
+
+/* ---------- Screen shell ---------- */
+
+.screen {
+  min-height: 100%;
+  padding: calc(var(--screen-pad-top) + env(safe-area-inset-top)) var(--screen-pad-x)
+    calc(var(--space-8) + env(safe-area-inset-bottom));
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ---------- Type roles (see BRANDING.md § Type) ---------- */
+
+.screen-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 0 0 var(--space-5);
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0 0 var(--space-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 44px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.metric-label {
+  font-family: var(--font-text);
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.delta {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--ink-faint);
+}
+
+.delta--above {
+  color: var(--above);
+}
+
+.delta--below {
+  color: var(--below);
+}
+
+.body-text {
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.timestamp {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--ink-faint);
+}
+
+/* ---------- Structure ---------- */
+
+.hairline {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: var(--space-4) 0;
+}
+
+.metric-row {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-row__figures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack > * + * {
+  margin-top: var(--space-5);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  appearance: none;
+  border-radius: var(--radius);
+  min-height: var(--button-height);
+  min-width: var(--tap-min);
+  padding: 0 var(--space-4);
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  width: 100%;
+  transition: none;
+}
+
+.btn-primary {
+  background: var(--clay);
+  color: var(--paper);
+  border-color: var(--clay);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.btn-choice {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+  flex: 1;
+}
+
+.btn-choice[aria-pressed='true'] {
+  background: var(--clay-sunk);
+  border-color: var(--clay-sunk);
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* ---------- The Call prescription block ---------- */
+
+.prescription {
+  background: var(--clay-sunk);
+  color: var(--ink);
+  font-size: 17px;
+  padding: var(--space-4);
+}
+
+/* ---------- Empty / error states — declarative, no spinners ---------- */
+
+.empty-state {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}

@@ -1,0 +1,38 @@
+from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import aws_dynamodb as dynamodb
+from constructs import Construct
+
+
+class DataStack(Stack):
+    """One DynamoDB table for one user.
+
+    Partition key groups by entity (SLEEP, HRV, RHR, CALL, OUTCOME, NOTE,
+    ...), sort key is an ISO timestamp, so "this entity, this date range"
+    — every read pattern in this app — is a native query. The by-date GSI
+    answers "everything for this one day" for the dashboard in a single
+    query instead of six.
+
+    RemovalPolicy.RETAIN on purpose: `cdk destroy` must never be able to
+    take sleep and heart-rate history with it.
+    """
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        self.table = dynamodb.Table(
+            self,
+            "Table",
+            partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="sk", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
+                point_in_time_recovery_enabled=True
+            ),
+            removal_policy=RemovalPolicy.RETAIN,
+        )
+
+        self.table.add_global_secondary_index(
+            index_name="by-date",
+            partition_key=dynamodb.Attribute(name="date", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="sk", type=dynamodb.AttributeType.STRING),
+        )

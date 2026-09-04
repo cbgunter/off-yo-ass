@@ -1,0 +1,26 @@
+[project]
+name = "oya-infra"
+version = "0.0.1"
+description = "Off Yo Ass — CDK app"
+requires-python = ">=3.13"
+dependencies = [
+  "aws-cdk-lib>=2.160,<3",
+  "constructs>=10.3,<11",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["stacks"]

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - working-directory: web
+        run: npm ci
+      - working-directory: web
+        run: npm run lint
+      - working-directory: web
+        run: npm run test
+      - working-directory: web
+        run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+
+  # Validates the CDK app still synthesizes cleanly. No AWS credentials
+  # here on purpose — synth needs none of the stacks in this app do a
+  # context lookup against the live account (the hosted zone is imported
+  # by ID, never looked up), so this catches infra bugs on every PR
+  # without needing deploy permissions in CI checks.
+  infra-synth:
+    runs-on: ubuntu-latest
+    needs: [web, backend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v3
+      - working-directory: web
+        run: |
+          npm ci
+          npm run build
+      - run: bash scripts/build_lambda.sh
+      - working-directory: infra
+        run: uv sync
+      - working-directory: infra
+        run: npx --yes aws-cdk@2 synth --all
