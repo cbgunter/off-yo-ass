@@ -246,6 +246,41 @@ img {
   padding: var(--space-4);
 }
 
+/* ---------- Meal photo + line items (phase 3 food) ---------- */
+
+.meal-photo-preview {
+  width: 100%;
+  height: var(--photo-preview-height);
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.food-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.food-item-row:last-child {
+  border-bottom: none;
+}
+
+.meal-row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.meal-thumb {
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
 /* ---------- Empty / error states — declarative, no spinners ---------- */
 
 .empty-state {

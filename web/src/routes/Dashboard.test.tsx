@@ -5,7 +5,7 @@ import { Dashboard } from './Dashboard'
 // vi.mock factories are hoisted above the rest of the file, so a fixture
 // referenced inside one has to go through vi.hoisted rather than a plain
 // top-level const — otherwise it's a "used before initialization" error.
-const { DATA } = vi.hoisted(() => ({
+const { DATA, FOOD_DATA } = vi.hoisted(() => ({
   DATA: {
     sleep: { label: 'Sleep', unit: 'min', today: null, days: 0, building: true },
     resting_heart_rate: {
@@ -25,10 +25,16 @@ const { DATA } = vi.hoisted(() => ({
     weight: { label: 'Weight', unit: 'lbs', today: null, days: 0, building: true },
     blood_pressure: null,
   },
+  FOOD_DATA: {
+    calories: { today: null, delta: null, days: 0, building: true },
+    meals: [],
+  },
 }))
 
 vi.mock('@/lib/api', () => ({
-  api: { get: vi.fn().mockResolvedValue(DATA) },
+  api: {
+    get: vi.fn((path: string) => Promise.resolve(path === '/meals/today' ? FOOD_DATA : DATA)),
+  },
 }))
 
 describe('Dashboard', () => {
@@ -51,5 +57,10 @@ describe('Dashboard', () => {
     await waitFor(() =>
       expect(screen.getByText('No readings yet. Log one under Log.')).toBeInTheDocument(),
     )
+  })
+
+  it('shows the food section fetched from its own endpoint, not the dashboard payload', async () => {
+    render(<Dashboard />)
+    await waitFor(() => expect(screen.getByText('No meals logged today.')).toBeInTheDocument())
   })
 })

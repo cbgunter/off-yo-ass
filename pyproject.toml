@@ -27,7 +27,7 @@ dev = [
   # scripts/build_lambda.sh — needed here only for local dev/test against a
   # real or moto-mocked DynamoDB/SSM.
   "boto3>=1.35",
-  "moto[dynamodb]>=5.0",
+  "moto[dynamodb,s3]>=5.0",
 ]
 
 [tool.pytest.ini_options]

@@ -1,7 +1,8 @@
 """The daily call. Scheduled at 15:45 America/New_York (see
 _scheduled_function in infra/stacks/workers_stack.py) -- reads recovery,
-calendar, and weather, and writes one prescription in BRANDING.md's voice,
-enforced by a mechanical validator, not just a system-prompt request.
+calendar, weather, and food, and writes one prescription in BRANDING.md's
+voice, enforced by a mechanical validator, not just a system-prompt
+request.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 from anthropic import Anthropic
 
+from oya.domain.food import get_food_snapshot
 from oya.domain.recovery import RecoverySnapshot, get_recovery_snapshot
 from oya.integrations.calendar import CalendarSnapshot
 from oya.integrations.calendar import get_snapshot as get_calendar_snapshot
@@ -76,6 +78,14 @@ def _format_weather(weather: WeatherWindow | None) -> str:
     return "17:00-20:00: " + ", ".join(parts)
 
 
+def _format_food() -> str:
+    calories = get_food_snapshot().calories
+    if calories.building or calories.today is None:
+        return f"Food: building baseline ({calories.days} of 30 days)."
+    sign = "+" if calories.delta >= 0 else ""
+    return f"Food: {calories.today:.0f} cal today ({sign}{calories.delta:.0f} vs 30d avg)."
+
+
 def _format_week(days: int = 7) -> str:
     now = datetime.now(UTC)
     start = (now - timedelta(days=days)).date().isoformat()
@@ -132,10 +142,16 @@ def build_context(*, exclude_activity: str | None = None) -> str:
     except Exception:
         weather_text = "Weather unavailable."
 
+    try:
+        food_text = _format_food()
+    except Exception:
+        food_text = "Food unavailable."
+
     sections = [
         "Recovery:\n" + _format_recovery(recovery),
         calendar_text,
         weather_text,
+        food_text,
         _format_week(),
         _format_history(),
         _format_notes(),

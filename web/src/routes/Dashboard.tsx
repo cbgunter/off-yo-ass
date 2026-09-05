@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { FoodSummary } from '@/components/FoodSummary'
 import { MetricRow } from '@/components/MetricRow'
 import { NoteBox } from '@/components/NoteBox'
 
@@ -199,6 +200,9 @@ export function Dashboard() {
           {renderBloodPressure(data.blood_pressure)}
         </div>
       )}
+
+      <hr className="hairline" />
+      <FoodSummary />
 
       <hr className="hairline" />
       <NoteBox />

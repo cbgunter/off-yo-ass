@@ -1,5 +1,6 @@
 from aws_cdk import CfnOutput, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as dynamodb
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
 
@@ -43,3 +44,15 @@ class DataStack(Stack):
         # CDK app, via `aws cloudformation describe-stacks`, without
         # hardcoding that generated name anywhere.
         CfnOutput(self, "TableName", value=self.table.table_name, export_name="OyaDataTableName")
+
+        # Meal photos -- the first non-website bucket in the app. Private:
+        # photos are only ever served back through the API Lambda
+        # (oya/api/meals.py), never directly, so there's no CORS rule and
+        # no CloudFront behavior for it, keeping the app's one deliberate
+        # same-origin invariant intact.
+        self.meal_photos_bucket = s3.Bucket(
+            self,
+            "MealPhotosBucket",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.RETAIN,
+        )

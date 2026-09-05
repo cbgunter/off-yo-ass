@@ -9,6 +9,7 @@ from oya.api.app import app
 from oya.settings import get_settings
 
 TEST_TABLE_NAME = "test-oya-table"
+TEST_BUCKET_NAME = "test-oya-meal-photos"
 
 # Settings is env-driven (pydantic-settings) and get_settings() is
 # lru_cache'd, so code that calls get_settings() directly — like
@@ -21,6 +22,7 @@ TEST_ENV = {
     "OYA_ALLOWED_EMAIL": "cbgunter@gmail.com",
     "OYA_SESSION_SECRET": "test-secret",
     "OYA_TABLE_NAME": TEST_TABLE_NAME,
+    "OYA_MEAL_PHOTOS_BUCKET": TEST_BUCKET_NAME,
     "OYA_ANTHROPIC_API_KEY": "sk-ant-test-fake",
     "OYA_GOOGLE_CLIENT_SECRET": "test-google-client-secret",
     "OYA_GOOGLE_REFRESH_TOKEN": "test-google-refresh-token",
@@ -49,6 +51,10 @@ def dynamodb_table(monkeypatch):
             BillingMode="PAY_PER_REQUEST",
         )
         table.wait_until_exists()
+
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket=TEST_BUCKET_NAME)
+
         yield table
 
     get_settings.cache_clear()

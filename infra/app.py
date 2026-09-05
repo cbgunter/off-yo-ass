@@ -28,6 +28,7 @@ api = ApiStack(
     app,
     "OyaApi",
     table=data.table,
+    meal_photos_bucket=data.meal_photos_bucket,
     # Client IDs aren't secret — set as a plain GitHub Actions repo
     # variable once the phase-2 Google Cloud project exists. Empty is a
     # valid placeholder: sign-in just refuses everyone until it's set.

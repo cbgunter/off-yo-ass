@@ -876,6 +876,10 @@ dynamodb = [
     { name = "docker" },
     { name = "py-partiql-parser" },
 ]
+s3 = [
+    { name = "py-partiql-parser" },
+    { name = "pyyaml" },
+]
 
 [[package]]
 name = "multidict"
@@ -988,7 +992,7 @@ dependencies = [
 dev = [
     { name = "boto3" },
     { name = "httpx" },
-    { name = "moto", extra = ["dynamodb"] },
+    { name = "moto", extra = ["dynamodb", "s3"] },
     { name = "pytest" },
     { name = "ruff" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1012,7 +1016,7 @@ requires-dist = [
 dev = [
     { name = "boto3", specifier = ">=1.35" },
     { name = "httpx", specifier = ">=0.27" },
-    { name = "moto", extras = ["dynamodb"], specifier = ">=5.0" },
+    { name = "moto", extras = ["dynamodb", "s3"], specifier = ">=5.0" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "ruff", specifier = ">=0.7" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },

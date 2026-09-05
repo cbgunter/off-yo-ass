@@ -56,6 +56,7 @@ class Entity:
     NOTE = "NOTE"
     QUESTION = "QUESTION"
     ANSWER = "ANSWER"
+    MEAL = "MEAL"
 
 
 def _table():

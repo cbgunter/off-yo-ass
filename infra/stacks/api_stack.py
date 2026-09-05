@@ -6,6 +6,7 @@ from aws_cdk import aws_apigatewayv2_integrations as apigwv2_integrations
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
 # Produced by scripts/build_lambda.sh — plain pip wheels, no Docker. Run
@@ -37,6 +38,7 @@ class ApiStack(Stack):
         construct_id: str,
         *,
         table: dynamodb.ITable,
+        meal_photos_bucket: s3.IBucket,
         google_client_id: str,
         allowed_email: str,
         weather_office: str = "",
@@ -69,10 +71,12 @@ class ApiStack(Stack):
                 "OYA_WEATHER_OFFICE": weather_office,
                 "OYA_WEATHER_GRID_X": weather_grid_x,
                 "OYA_WEATHER_GRID_Y": weather_grid_y,
+                "OYA_MEAL_PHOTOS_BUCKET": meal_photos_bucket.bucket_name,
             },
         )
 
         table.grant_read_write_data(fn)
+        meal_photos_bucket.grant_read_write(fn)
 
         for param in (
             SESSION_SECRET_PARAM,

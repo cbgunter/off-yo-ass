@@ -82,20 +82,23 @@ def test_generate_call_falls_back_to_a_template_after_two_dirty_attempts(dynamod
     assert is_clean(result.fallback)
 
 
-def test_build_context_survives_calendar_and_weather_being_unavailable(dynamodb_table):
-    """Calendar (not yet bootstrapped, or Google having a bad day) and
-    weather (missing grid config, or NWS being down) are both external
-    and optional in spirit -- a failure in either must not take the whole
-    call down with it, the same way a stale source never blocks anything
-    else in this app. Recovery comes from this app's own data, so that
-    one path is allowed to raise for real.
+def test_build_context_survives_calendar_weather_and_food_being_unavailable(dynamodb_table):
+    """Calendar (not yet bootstrapped, or Google having a bad day), weather
+    (missing grid config, or NWS being down), and food (a domain bug, or
+    the table momentarily unreachable) are all optional in spirit -- a
+    failure in any one of them must not take the whole call down with it,
+    the same way a stale source never blocks anything else in this app.
+    Recovery comes from this app's own data via a separate, unguarded
+    path, so that one is allowed to raise for real.
     """
     with (
         patch("oya.workers.coach.get_calendar_snapshot", side_effect=RuntimeError("no token yet")),
         patch("oya.workers.coach.get_evening_window", side_effect=RuntimeError("NWS is down")),
+        patch("oya.workers.coach.get_food_snapshot", side_effect=RuntimeError("table unreachable")),
     ):
         context = build_context()
 
     assert "Calendar unavailable." in context
     assert "Weather unavailable." in context
+    assert "Food unavailable." in context
     assert "Recovery:" in context  # the rest of the context still built normally

@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_api_key_param: str = "/oya/anthropic/api-key"
 
+    # Meal photos, private bucket -- not a secret, just config, same as
+    # table_name.
+    meal_photos_bucket: str = ""
+
     @property
     def cookie_secure(self) -> bool:
         # Secure cookies aren't sent back over plain http, which is what
