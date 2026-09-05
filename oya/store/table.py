@@ -50,6 +50,12 @@ class Entity:
     SOURCE_HEALTH = "SOURCE_HEALTH"
     SYNC_RUN = "SYNC_RUN"
     SUB = "SUB"
+    CALL = "CALL"
+    OUTCOME = "OUTCOME"
+    FEEL = "FEEL"
+    NOTE = "NOTE"
+    QUESTION = "QUESTION"
+    ANSWER = "ANSWER"
 
 
 def _table():

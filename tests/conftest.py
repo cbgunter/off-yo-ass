@@ -21,6 +21,9 @@ TEST_ENV = {
     "OYA_ALLOWED_EMAIL": "cbgunter@gmail.com",
     "OYA_SESSION_SECRET": "test-secret",
     "OYA_TABLE_NAME": TEST_TABLE_NAME,
+    "OYA_ANTHROPIC_API_KEY": "sk-ant-test-fake",
+    "OYA_GOOGLE_CLIENT_SECRET": "test-google-client-secret",
+    "OYA_GOOGLE_REFRESH_TOKEN": "test-google-refresh-token",
     "AWS_DEFAULT_REGION": "us-east-1",
 }
 

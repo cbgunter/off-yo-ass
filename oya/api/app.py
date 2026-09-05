@@ -6,8 +6,11 @@ request."""
 from fastapi import FastAPI
 
 from oya.api.auth import router as auth_router
+from oya.api.call import router as call_router
 from oya.api.dashboard import router as dashboard_router
+from oya.api.notes import router as notes_router
 from oya.api.push import router as push_router
+from oya.api.question import router as question_router
 from oya.api.quicklog import router as quicklog_router
 from oya.api.sources import router as sources_router
 
@@ -17,6 +20,9 @@ app.include_router(dashboard_router)
 app.include_router(sources_router)
 app.include_router(quicklog_router)
 app.include_router(push_router)
+app.include_router(call_router)
+app.include_router(notes_router)
+app.include_router(question_router)
 
 
 @app.get("/api/health")

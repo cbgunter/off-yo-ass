@@ -12,10 +12,16 @@ from constructs import Construct
 # that script before `cdk synth` / `cdk deploy`.
 LAMBDA_ASSET_PATH = Path(__file__).resolve().parent.parent / "build" / "lambda"
 
-# A SecureString, created out of band (CloudFormation's AWS::SSM::Parameter
-# does not support SecureString — this has to exist before first deploy).
-# See scripts/bootstrap_secrets.sh.
+# SecureStrings, created out of band (CloudFormation's AWS::SSM::Parameter
+# does not support SecureString — these have to exist before deploy). See
+# scripts/bootstrap_secrets.sh and infra/stacks/workers_stack.py, which
+# duplicates the same literal strings for the same reason — this stack
+# and the app never share a Python environment to import a shared
+# constant from.
 SESSION_SECRET_PARAM = "/oya/session-secret"
+ANTHROPIC_API_KEY_PARAM = "/oya/anthropic/api-key"
+GOOGLE_CLIENT_SECRET_PARAM = "/oya/google/client-secret"
+GOOGLE_REFRESH_TOKEN_PARAM = "/oya/google/refresh-token"
 
 
 class ApiStack(Stack):
@@ -33,6 +39,9 @@ class ApiStack(Stack):
         table: dynamodb.ITable,
         google_client_id: str,
         allowed_email: str,
+        weather_office: str = "",
+        weather_grid_x: str = "",
+        weather_grid_y: str = "",
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -45,24 +54,38 @@ class ApiStack(Stack):
             handler="oya.api.handler.handler",
             code=lambda_.Code.from_asset(str(LAMBDA_ASSET_PATH)),
             memory_size=512,
-            timeout=Duration.seconds(15),
+            # Most routes return instantly, but POST /api/call/override
+            # and POST /api/notes make a real synchronous Claude call —
+            # 15s was fine before either of those existed, 30s gives an
+            # Opus call reasonable room without masking a genuinely hung
+            # request as a timeout.
+            timeout=Duration.seconds(30),
             environment={
                 "OYA_ENV": "production",
                 "OYA_GOOGLE_CLIENT_ID": google_client_id,
                 "OYA_ALLOWED_EMAIL": allowed_email,
                 "OYA_TABLE_NAME": table.table_name,
                 "OYA_SESSION_SECRET_PARAM": SESSION_SECRET_PARAM,
+                "OYA_WEATHER_OFFICE": weather_office,
+                "OYA_WEATHER_GRID_X": weather_grid_x,
+                "OYA_WEATHER_GRID_Y": weather_grid_y,
             },
         )
 
         table.grant_read_write_data(fn)
 
-        fn.add_to_role_policy(
-            iam.PolicyStatement(
-                actions=["ssm:GetParameter"],
-                resources=[f"arn:aws:ssm:{self.region}:{self.account}:parameter{SESSION_SECRET_PARAM}"],
+        for param in (
+            SESSION_SECRET_PARAM,
+            ANTHROPIC_API_KEY_PARAM,
+            GOOGLE_CLIENT_SECRET_PARAM,
+            GOOGLE_REFRESH_TOKEN_PARAM,
+        ):
+            fn.add_to_role_policy(
+                iam.PolicyStatement(
+                    actions=["ssm:GetParameter"],
+                    resources=[f"arn:aws:ssm:{self.region}:{self.account}:parameter{param}"],
+                )
             )
-        )
 
         self.http_api = apigwv2.HttpApi(
             self,

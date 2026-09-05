@@ -34,7 +34,7 @@ def _record_sync_run(status: str, *, rows: int = 0, error: str | None = None) ->
 
 def _notify_all_subscriptions(title: str, body: str) -> None:
     for sub in query_all(Entity.SUB):
-        send_push(sub["subscription"], title, body)
+        send_push(sub["subscription"], title, body, url="/sources")
 
 
 def _write_metrics(metrics: DayMetrics) -> int:

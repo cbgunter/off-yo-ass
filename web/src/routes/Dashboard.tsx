@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { MetricRow } from '@/components/MetricRow'
+import { NoteBox } from '@/components/NoteBox'
 
 type MetricPoint = {
   label: string
@@ -198,6 +199,9 @@ export function Dashboard() {
           {renderBloodPressure(data.blood_pressure)}
         </div>
       )}
+
+      <hr className="hairline" />
+      <NoteBox />
     </div>
   )
 }

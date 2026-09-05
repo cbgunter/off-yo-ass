@@ -33,6 +33,9 @@ api = ApiStack(
     # valid placeholder: sign-in just refuses everyone until it's set.
     google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""),
     allowed_email=os.environ.get("ALLOWED_EMAIL", "cbgunter@gmail.com"),
+    weather_office=os.environ.get("WEATHER_OFFICE", ""),
+    weather_grid_x=os.environ.get("WEATHER_GRID_X", ""),
+    weather_grid_y=os.environ.get("WEATHER_GRID_Y", ""),
     env=env,
 )
 
@@ -54,6 +57,13 @@ WorkersStack(
     # scripts/bootstrap_vapid.py, set as a plain GitHub Actions repo
     # variable the same way GOOGLE_CLIENT_ID is.
     vapid_public_key=os.environ.get("VAPID_PUBLIC_KEY", ""),
+    google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""),
+    # NWS grid coordinates for the home ZIP — not secret, just config,
+    # resolved once by scripts/resolve_weather_grid.py. Empty is a valid
+    # placeholder: the coach just reports weather as unavailable.
+    weather_office=os.environ.get("WEATHER_OFFICE", ""),
+    weather_grid_x=os.environ.get("WEATHER_GRID_X", ""),
+    weather_grid_y=os.environ.get("WEATHER_GRID_Y", ""),
     env=env,
 )
 

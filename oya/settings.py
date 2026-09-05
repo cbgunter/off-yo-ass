@@ -48,6 +48,28 @@ class Settings(BaseSettings):
 
     garmin_tokenstore_prefix: str = "/oya/garmin/tokenstore"
 
+    # Google Calendar offline access — a separate OAuth flow from the
+    # phase-0 Sign-In (that one never stores a refresh token). client_id
+    # is the same public value already set above. Same direct-value/param
+    # pattern as session_secret: set directly for local dev and tests,
+    # left blank in production where the *_param SSM name takes over.
+    google_client_secret: str = ""
+    google_client_secret_param: str = "/oya/google/client-secret"
+    google_refresh_token: str = ""
+    google_refresh_token_param: str = "/oya/google/refresh-token"
+
+    # NWS grid coordinates for the home ZIP, resolved once (they don't
+    # change) and passed as plain env vars — not secret, just config.
+    weather_office: str = ""
+    weather_grid_x: str = ""
+    weather_grid_y: str = ""
+
+    # The coach's own Anthropic key, separate from the one the weekly
+    # health-check agent uses in GitHub Actions — that one never touches
+    # the Lambda, and this one never touches CI.
+    anthropic_api_key: str = ""
+    anthropic_api_key_param: str = "/oya/anthropic/api-key"
+
     @property
     def cookie_secure(self) -> bool:
         # Secure cookies aren't sent back over plain http, which is what
@@ -65,6 +87,15 @@ class Settings(BaseSettings):
         if not self.vapid_private_key_param:
             raise RuntimeError("OYA_VAPID_PRIVATE_KEY_PARAM is not configured")
         return _fetch_ssm_secret(self.vapid_private_key_param)
+
+    def resolved_google_client_secret(self) -> str:
+        return self.google_client_secret or _fetch_ssm_secret(self.google_client_secret_param)
+
+    def resolved_google_refresh_token(self) -> str:
+        return self.google_refresh_token or _fetch_ssm_secret(self.google_refresh_token_param)
+
+    def resolved_anthropic_api_key(self) -> str:
+        return self.anthropic_api_key or _fetch_ssm_secret(self.anthropic_api_key_param)
 
 
 @lru_cache

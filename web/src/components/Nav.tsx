@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/auth'
 
 const LINKS = [
   { to: '/', label: 'Today', end: true },
+  { to: '/call', label: 'Call', end: false },
   { to: '/log', label: 'Log', end: false },
   { to: '/sources', label: 'Sources', end: false },
 ]

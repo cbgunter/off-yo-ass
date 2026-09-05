@@ -26,27 +26,36 @@ registerRoute(
   }),
 )
 
-type PushPayload = { title: string; body: string }
+type PushPayload = { title: string; body: string; url?: string }
 
 self.addEventListener('push', (event: PushEvent) => {
   if (!event.data) return
-  const { title, body } = event.data.json() as PushPayload
+  const { title, body, url } = event.data.json() as PushPayload
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon: '/icons/icon-192.png',
+      data: { url: url ?? '/' },
     }),
   )
 })
 
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close()
+  const targetUrl = (event.notification.data as { url?: string } | undefined)?.url ?? '/'
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientsList) => {
+    self.clients.matchAll({ type: 'window' }).then(async (clientsList) => {
       for (const client of clientsList) {
-        if ('focus' in client) return (client as WindowClient).focus()
+        if ('focus' in client) {
+          const windowClient = client as WindowClient
+          if ('navigate' in windowClient) {
+            await windowClient.navigate(targetUrl)
+          }
+          return windowClient.focus()
+        }
       }
-      return self.clients.openWindow('/')
+      return self.clients.openWindow(targetUrl)
     }),
   )
 })

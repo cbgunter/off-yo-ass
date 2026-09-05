@@ -5,6 +5,8 @@ import { SignIn } from '@/routes/SignIn'
 import { Dashboard } from '@/routes/Dashboard'
 import { Sources } from '@/routes/Sources'
 import { Log } from '@/routes/Log'
+import { TheCall } from '@/routes/TheCall'
+import { Question } from '@/routes/Question'
 
 function Gate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -51,6 +53,22 @@ function AppRoutes() {
         element={
           <Gate>
             <Log />
+          </Gate>
+        }
+      />
+      <Route
+        path="/call"
+        element={
+          <Gate>
+            <TheCall />
+          </Gate>
+        }
+      />
+      <Route
+        path="/question"
+        element={
+          <Gate>
+            <Question />
           </Gate>
         }
       />
