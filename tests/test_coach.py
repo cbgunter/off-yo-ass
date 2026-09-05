@@ -5,7 +5,7 @@ from oya.integrations.weather import WeatherWindow
 from oya.prompts.coach import CoachResponse, Prescription
 from oya.prompts.validate import is_clean
 from oya.store.table import Entity, put_item
-from oya.workers.coach import generate_call
+from oya.workers.coach import build_context, generate_call
 
 CLEAN = CoachResponse(
     headline="Resting heart rate is 6 bpm under your 30-day average.",
@@ -80,3 +80,22 @@ def test_generate_call_falls_back_to_a_template_after_two_dirty_attempts(dynamod
     assert is_clean(result.headline)
     assert is_clean(result.why)
     assert is_clean(result.fallback)
+
+
+def test_build_context_survives_calendar_and_weather_being_unavailable(dynamodb_table):
+    """Calendar (not yet bootstrapped, or Google having a bad day) and
+    weather (missing grid config, or NWS being down) are both external
+    and optional in spirit -- a failure in either must not take the whole
+    call down with it, the same way a stale source never blocks anything
+    else in this app. Recovery comes from this app's own data, so that
+    one path is allowed to raise for real.
+    """
+    with (
+        patch("oya.workers.coach.get_calendar_snapshot", side_effect=RuntimeError("no token yet")),
+        patch("oya.workers.coach.get_evening_window", side_effect=RuntimeError("NWS is down")),
+    ):
+        context = build_context()
+
+    assert "Calendar unavailable." in context
+    assert "Weather unavailable." in context
+    assert "Recovery:" in context  # the rest of the context still built normally

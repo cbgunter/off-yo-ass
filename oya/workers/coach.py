@@ -116,13 +116,26 @@ def _format_notes() -> str:
 
 def build_context(*, exclude_activity: str | None = None) -> str:
     recovery = get_recovery_snapshot()
-    calendar = get_calendar_snapshot()
-    weather = get_evening_window()
+
+    # Recovery comes from this app's own DynamoDB data, so a failure there
+    # is a real bug worth crashing on. Calendar and weather are both
+    # external and both optional in spirit -- not yet bootstrapped, or
+    # having a bad day, shouldn't take the whole call down with them, the
+    # same way a stale source never blocks anything else in this app.
+    try:
+        calendar_text = _format_calendar(get_calendar_snapshot())
+    except Exception:
+        calendar_text = "Calendar unavailable."
+
+    try:
+        weather_text = _format_weather(get_evening_window())
+    except Exception:
+        weather_text = "Weather unavailable."
 
     sections = [
         "Recovery:\n" + _format_recovery(recovery),
-        _format_calendar(calendar),
-        _format_weather(weather),
+        calendar_text,
+        weather_text,
         _format_week(),
         _format_history(),
         _format_notes(),
