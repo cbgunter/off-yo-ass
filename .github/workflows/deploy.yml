@@ -61,6 +61,9 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           ALLOWED_EMAIL: cbgunter@gmail.com
           VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+          WEATHER_OFFICE: ${{ vars.WEATHER_OFFICE }}
+          WEATHER_GRID_X: ${{ vars.WEATHER_GRID_X }}
+          WEATHER_GRID_Y: ${{ vars.WEATHER_GRID_Y }}
         run: >
           npx --yes aws-cdk@2 deploy
           OyaNetwork OyaData OyaApi OyaFrontend OyaWorkers
