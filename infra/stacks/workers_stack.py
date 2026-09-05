@@ -60,6 +60,7 @@ class WorkersStack(Stack):
             "OYA_ENV": "production",
             "OYA_TABLE_NAME": table.table_name,
             "OYA_VAPID_PUBLIC_KEY": vapid_public_key,
+            "OYA_VAPID_PRIVATE_KEY_PARAM": VAPID_PRIVATE_KEY_PARAM,
         }
 
         self._scheduled_function(

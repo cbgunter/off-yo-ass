@@ -96,5 +96,24 @@ def test_garmin_tokenstore_policy_grants_both_the_bare_path_and_its_children():
     assert f"{base}/*" in resources
 
 
+def test_every_worker_has_the_vapid_private_key_param_name_in_its_environment():
+    """Every worker sends push notifications, and settings.py's
+    resolved_vapid_private_key() needs OYA_VAPID_PRIVATE_KEY_PARAM to know
+    which SSM parameter to read -- granting IAM read access to that
+    parameter (ssm_read=[VAPID_PRIVATE_KEY_PARAM]) is not the same thing
+    as telling the Lambda its name. Missing this raised
+    RuntimeError("OYA_VAPID_PRIVATE_KEY_PARAM is not configured") the
+    first time a real push subscription existed and a worker actually
+    tried to notify it, on every one of the five workers.
+    """
+    template = _synth_workers_template()
+
+    functions = template.find_resources("AWS::Lambda::Function")
+    assert len(functions) == len(EXPECTED_SCHEDULES)
+    for name, fn in functions.items():
+        env_vars = fn["Properties"]["Environment"]["Variables"]
+        assert env_vars.get("OYA_VAPID_PRIVATE_KEY_PARAM") == "/oya/vapid/private-key", name
+
+
 def _as_list(value):
     return value if isinstance(value, list) else [value]
