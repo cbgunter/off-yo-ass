@@ -1,11 +1,14 @@
 import json
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from oya.integrations.garmin import fetch_day
+from oya.integrations.garmin import fetch_activities, fetch_day
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "garmin_day.json").read_text())
+ACTIVITIES_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "garmin_activities.json").read_text()
+)
 
 
 class _FakeClient:
@@ -33,6 +36,9 @@ class _FakeClient:
 
     def get_body_composition(self, _start, _end):
         return FIXTURE["weight"]
+
+    def get_activities_by_date(self, _start, _end):
+        return ACTIVITIES_FIXTURE["activities"]
 
 
 def test_fetch_day_against_a_recorded_real_response():
@@ -66,3 +72,58 @@ def test_body_battery_at_wake_skips_leading_null_placeholders():
         metrics = fetch_day(date(2026, 9, 3))
 
     assert metrics.body_battery_at_wake == 49
+
+
+def test_fetch_activities_maps_the_raw_garmin_shape():
+    with patch("oya.integrations.garmin._client", return_value=_FakeClient()):
+        activities = fetch_activities(date(2026, 9, 3))
+
+    assert len(activities) == 2
+
+    ride = activities[0]
+    assert ride.activity_id == 987654321
+    assert ride.type_key == "cycling"
+    assert ride.start_gmt == datetime(2026, 9, 3, 19, 41, 12, tzinfo=UTC)
+    # duration comes back from Garmin in seconds -- this must be minutes.
+    assert ride.duration_min == 45.5
+    assert ride.distance_m == 18452.3
+    assert ride.calories == 612.0
+
+
+def test_fetch_activities_defaults_type_key_when_garmin_omits_activity_type():
+    client = _FakeClient()
+    with patch("oya.integrations.garmin._client", return_value=client):
+        with patch.object(
+            client,
+            "get_activities_by_date",
+            return_value=[
+                {
+                    "activityId": 1,
+                    "activityType": None,
+                    "startTimeGMT": "2026-09-03 12:00:00",
+                    "duration": 600.0,
+                }
+            ],
+        ):
+            activities = fetch_activities(date(2026, 9, 3))
+
+    assert activities[0].type_key == "other"
+
+
+def test_fetch_activities_skips_entries_missing_an_id_or_start_time():
+    """activity_id + start_gmt together are the idempotency key
+    sync_garmin.py's writer relies on -- an entry missing either can't be
+    written safely, so it's dropped rather than guessed at."""
+    client = _FakeClient()
+    with patch("oya.integrations.garmin._client", return_value=client):
+        with patch.object(
+            client,
+            "get_activities_by_date",
+            return_value=[
+                {"activityId": None, "startTimeGMT": "2026-09-03 12:00:00", "duration": 600.0},
+                {"activityId": 2, "startTimeGMT": None, "duration": 600.0},
+            ],
+        ):
+            activities = fetch_activities(date(2026, 9, 3))
+
+    assert activities == []

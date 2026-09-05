@@ -1,15 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Log } from './Log'
+import { Eat } from './Eat'
 
-const { mockPost } = vi.hoisted(() => ({ mockPost: vi.fn() }))
+const { FOOD_DATA, mockGet, mockPost } = vi.hoisted(() => ({
+  FOOD_DATA: {
+    calories: { today: null, delta: null, days: 0, building: true },
+    meals: [],
+  },
+  mockGet: vi.fn(),
+  mockPost: vi.fn(),
+}))
 
 vi.mock('@/lib/api', () => ({
-  api: { post: mockPost },
+  api: { get: mockGet, post: mockPost },
 }))
 
 beforeEach(() => {
+  mockGet.mockReset().mockResolvedValue(FOOD_DATA)
   mockPost.mockReset()
 })
 
@@ -32,11 +40,16 @@ function mockAnalyzeThenSave() {
   })
 }
 
-describe('Log a meal', () => {
+describe('Eat', () => {
+  it('shows the food summary, fetched from its own endpoint', async () => {
+    render(<Eat />)
+    await waitFor(() => expect(screen.getByText('No meals logged today.')).toBeInTheDocument())
+  })
+
   it('analyzes a description-only meal, then saves it', async () => {
     mockAnalyzeThenSave()
     const user = userEvent.setup()
-    render(<Log />)
+    render(<Eat />)
 
     await user.click(screen.getByRole('button', { name: 'Log a meal' }))
     await user.type(screen.getByLabelText('Description'), 'Chicken and rice')
@@ -64,7 +77,7 @@ describe('Log a meal', () => {
 
   it('requires a photo or a description before analyzing', async () => {
     const user = userEvent.setup()
-    render(<Log />)
+    render(<Eat />)
 
     await user.click(screen.getByRole('button', { name: 'Log a meal' }))
     await user.click(screen.getByRole('button', { name: 'Analyze' }))
@@ -76,7 +89,7 @@ describe('Log a meal', () => {
   it('lets you go back and add detail before saving, instead of typing macros by hand', async () => {
     mockAnalyzeThenSave()
     const user = userEvent.setup()
-    render(<Log />)
+    render(<Eat />)
 
     await user.click(screen.getByRole('button', { name: 'Log a meal' }))
     await user.type(screen.getByLabelText('Description'), 'Chicken and rice')

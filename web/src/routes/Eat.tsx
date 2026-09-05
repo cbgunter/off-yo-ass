@@ -1,14 +1,7 @@
 import { type ChangeEvent, useState } from 'react'
 import { api } from '@/lib/api'
+import { FoodSummary } from '@/components/FoodSummary'
 import { resizeImage } from '@/lib/image'
-
-type ActivityType = 'yard_work' | 'wood_splitting' | 'longwood_walk'
-
-const ACTIVITIES: { type: ActivityType; label: string }[] = [
-  { type: 'yard_work', label: 'Yard work' },
-  { type: 'wood_splitting', label: 'Split wood' },
-  { type: 'longwood_walk', label: 'Walk the garden' },
-]
 
 type FoodItem = { name: string; portion: string; calories: number }
 
@@ -22,17 +15,10 @@ type MealAnalysis = {
   notes: string
 }
 
-type Mode =
-  | { kind: 'activity'; type: ActivityType; label: string }
-  | { kind: 'bp' }
-  | { kind: 'meal' }
-  | null
+type Mode = { kind: 'meal' } | null
 
-export function Log() {
+export function Eat() {
   const [mode, setMode] = useState<Mode>(null)
-  const [duration, setDuration] = useState('30')
-  const [systolic, setSystolic] = useState('')
-  const [diastolic, setDiastolic] = useState('')
   const [mealDescription, setMealDescription] = useState('')
   const [mealPhotoBase64, setMealPhotoBase64] = useState<string | null>(null)
   const [mealPhotoPreview, setMealPhotoPreview] = useState<string | null>(null)
@@ -41,12 +27,10 @@ export function Log() {
   const [mealBusy, setMealBusy] = useState(false)
   const [saved, setSaved] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const reset = () => {
     setMode(null)
-    setDuration('30')
-    setSystolic('')
-    setDiastolic('')
     setMealDescription('')
     setMealPhotoBase64(null)
     setMealPhotoPreview(null)
@@ -58,38 +42,6 @@ export function Log() {
     setSaved(null)
     setError(null)
     setMode(next)
-  }
-
-  const saveActivity = async () => {
-    if (mode?.kind !== 'activity') return
-    setError(null)
-    try {
-      await api.post('/quicklog/activity', {
-        activity_type: mode.type,
-        duration_min: Number(duration),
-      })
-      setSaved(`${mode.label} logged.`)
-      reset()
-    } catch {
-      setError('Could not save. Try again.')
-    }
-  }
-
-  const saveBp = async () => {
-    const sys = Number(systolic)
-    const dia = Number(diastolic)
-    if (!sys || !dia) {
-      setError('Enter both numbers.')
-      return
-    }
-    setError(null)
-    try {
-      await api.post('/quicklog/bp', { systolic: sys, diastolic: dia })
-      setSaved('Blood pressure logged.')
-      reset()
-    } catch {
-      setError('Could not save. Try again.')
-    }
   }
 
   const onMealPhotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -137,6 +89,9 @@ export function Log() {
       })
       setSaved('Meal logged.')
       reset()
+      // FoodSummary fetches on mount only -- bump its key so it re-fetches
+      // and shows the meal that was just saved without a page reload.
+      setRefreshKey((k) => k + 1)
     } catch {
       setError('Could not save. Try again.')
     } finally {
@@ -146,95 +101,15 @@ export function Log() {
 
   return (
     <div className="screen">
-      <h1 className="screen-title">Log</h1>
+      <h1 className="screen-title">Eat</h1>
 
       {saved && !mode && <p className="body-text">{saved}</p>}
 
       {!mode && (
         <div className="stack">
-          {ACTIVITIES.map((a) => (
-            <button
-              key={a.type}
-              className="btn btn-secondary"
-              onClick={() => openMode({ kind: 'activity', type: a.type, label: a.label })}
-            >
-              {a.label}
-            </button>
-          ))}
-          <button className="btn btn-secondary" onClick={() => openMode({ kind: 'bp' })}>
-            Blood pressure
-          </button>
           <button className="btn btn-secondary" onClick={() => openMode({ kind: 'meal' })}>
             Log a meal
           </button>
-        </div>
-      )}
-
-      {mode?.kind === 'activity' && (
-        <div className="stack">
-          <div>
-            <label className="field-label" htmlFor="duration">
-              Minutes
-            </label>
-            <input
-              id="duration"
-              className="input"
-              type="number"
-              inputMode="numeric"
-              min="1"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            />
-          </div>
-          <div className="btn-row">
-            <button className="btn btn-secondary" onClick={reset}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={() => void saveActivity()}>
-              Save
-            </button>
-          </div>
-          {error && <p className="empty-state">{error}</p>}
-        </div>
-      )}
-
-      {mode?.kind === 'bp' && (
-        <div className="stack">
-          <div>
-            <label className="field-label" htmlFor="systolic">
-              Systolic
-            </label>
-            <input
-              id="systolic"
-              className="input"
-              type="number"
-              inputMode="numeric"
-              value={systolic}
-              onChange={(e) => setSystolic(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="field-label" htmlFor="diastolic">
-              Diastolic
-            </label>
-            <input
-              id="diastolic"
-              className="input"
-              type="number"
-              inputMode="numeric"
-              value={diastolic}
-              onChange={(e) => setDiastolic(e.target.value)}
-            />
-          </div>
-          <div className="btn-row">
-            <button className="btn btn-secondary" onClick={reset}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={() => void saveBp()}>
-              Save
-            </button>
-          </div>
-          {error && <p className="empty-state">{error}</p>}
         </div>
       )}
 
@@ -322,6 +197,9 @@ export function Log() {
           {error && <p className="empty-state">{error}</p>}
         </div>
       )}
+
+      <hr className="hairline" />
+      <FoodSummary key={refreshKey} />
     </div>
   )
 }

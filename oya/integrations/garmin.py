@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import tempfile
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import UTC, date, datetime
 
 from garminconnect import Garmin, GarminConnectAuthenticationError, GarminConnectConnectionError
 
@@ -42,6 +42,31 @@ class DayMetrics:
     body_battery_at_wake: float | None = None
     steps: float | None = None
     weight_lbs: float | None = None
+    raw: dict = field(default_factory=dict, repr=False)
+
+
+@dataclass
+class GarminActivity:
+    """One discrete workout/session, as opposed to DayMetrics' daily
+    wellness aggregate. `type_key` is Garmin's own raw activity-type
+    string (e.g. "cycling", "resistance_training") -- there's no offline
+    mapping of Garmin's full type vocabulary available (confirmed: not
+    bundled in the garminconnect package, only fetchable live via
+    get_activity_types()), so it's stored as-is rather than coerced into
+    this app's own fixed activity-type set. `activity_id` and
+    `start_gmt` both come straight from Garmin; `start_gmt` doubles as
+    the natural idempotency key when this gets written to the store,
+    since re-running the same day should overwrite the same rows, not
+    duplicate them.
+    """
+
+    activity_id: int
+    type_key: str
+    start_gmt: datetime
+    duration_min: float
+    distance_m: float | None = None
+    calories: float | None = None
+    name: str | None = None
     raw: dict = field(default_factory=dict, repr=False)
 
 
@@ -122,3 +147,43 @@ def fetch_day(day: date) -> DayMetrics:
         "weight": weight,
     }
     return metrics
+
+
+def fetch_activities(day: date) -> list[GarminActivity]:
+    """Discrete workouts for one calendar day -- unlike fetch_day's daily
+    aggregates, this is new and unverified against a real account (see
+    oya/workers/sync_garmin.py's isolated try/except around it). Confirmed
+    from the installed garminconnect/garth source, not from memory:
+    get_activities_by_date takes "YYYY-MM-DD" strings (a date object
+    raises), duration comes back in seconds, distance in meters, and
+    startTimeGMT is a naive "YYYY-MM-DD HH:MM:SS" string that is already
+    UTC despite carrying no offset.
+    """
+    client = _client()
+    iso = day.isoformat()
+    raw_activities = client.get_activities_by_date(iso, iso) or []
+
+    activities: list[GarminActivity] = []
+    for item in raw_activities:
+        activity_id = item.get("activityId")
+        start_gmt_raw = item.get("startTimeGMT")
+        if activity_id is None or not start_gmt_raw:
+            continue  # no stable idempotency key without both -- skip it
+
+        start_gmt = datetime.strptime(start_gmt_raw, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+        duration_seconds = item.get("duration")
+        type_key = (item.get("activityType") or {}).get("typeKey") or "other"
+
+        activities.append(
+            GarminActivity(
+                activity_id=activity_id,
+                type_key=type_key,
+                start_gmt=start_gmt,
+                duration_min=duration_seconds / 60 if duration_seconds is not None else 0.0,
+                distance_m=item.get("distance"),
+                calories=item.get("calories"),
+                name=item.get("activityName"),
+                raw=item,
+            )
+        )
+    return activities

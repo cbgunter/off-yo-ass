@@ -1,9 +1,9 @@
-"""Nightly Garmin sync. Pulls yesterday's recovery data, writes the daily
-entities, records a SYNC_RUN, evaluates source health, and sends one push
-if Garmin just went stale. One worker doing
-sync-then-healthcheck-then-alert, not three separate jobs — invoked by
-the EventBridge Scheduler rule in infra/stacks/workers_stack.py at 04:30
-America/New_York, every day, DST included.
+"""Nightly Garmin sync. Pulls yesterday's recovery data and discrete
+activities, writes the daily entities, records a SYNC_RUN, evaluates
+source health, and sends one push if Garmin just went stale. One worker
+doing sync-then-healthcheck-then-alert, not three separate jobs — invoked
+by the EventBridge Scheduler rule in infra/stacks/workers_stack.py at
+04:30 America/New_York, every day, DST included.
 """
 
 from __future__ import annotations
@@ -12,7 +12,13 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from oya.domain.source_health import evaluate
-from oya.integrations.garmin import DayMetrics, GarminNotBootstrapped, fetch_day
+from oya.integrations.garmin import (
+    DayMetrics,
+    GarminActivity,
+    GarminNotBootstrapped,
+    fetch_activities,
+    fetch_day,
+)
 from oya.integrations.webpush import send_push
 from oya.store.table import Entity, get_latest, put_item, query_all
 
@@ -61,6 +67,31 @@ def _write_metrics(metrics: DayMetrics) -> int:
     if metrics.weight_lbs is not None:
         write(Entity.WEIGHT, {"lbs": metrics.weight_lbs})
 
+    return rows
+
+
+def _write_activities(activities: list[GarminActivity]) -> int:
+    """sk is the activity's own start time, not datetime.now() -- unlike
+    Entity.SYNC_RUN's append-only log, re-running the same day has to
+    overwrite the same rows rather than duplicate them, and there's no
+    dedup machinery in oya/store/table.py beyond natural key overwrite.
+    """
+    rows = 0
+    for activity in activities:
+        put_item(
+            Entity.ACTIVITY,
+            activity.start_gmt.isoformat(),
+            {
+                "activity_type": activity.type_key,
+                "duration_min": activity.duration_min,
+                "source": "garmin",
+                "activity_id": activity.activity_id,
+                "activity_name": activity.name,
+                "calories": activity.calories,
+                "distance_m": activity.distance_m,
+            },
+        )
+        rows += 1
     return rows
 
 
@@ -116,6 +147,19 @@ def handler(event: dict, context: object) -> dict:
         raise
 
     rows = _write_metrics(metrics)
+
+    # Real activity sync -- new and unverified against a real account, in
+    # a way fetch_day's field paths already have been. A parsing surprise
+    # here must not take down the metrics sync every other worker depends
+    # on, so it gets its own isolated failure path (logged as its own
+    # SYNC_RUN row) instead of joining the block above and failing the
+    # whole run.
+    try:
+        activities = fetch_activities(yesterday)
+        rows += _write_activities(activities)
+    except Exception as exc:
+        _record_sync_run("activities_error", error=str(exc))
+
     _record_sync_run("ok", rows=rows)
     _check_and_notify_health(success=True)
     return {"status": "ok", "rows": rows}

@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
+import { StatusDot } from '@/components/StatusDot'
 
 const LINKS = [
-  { to: '/', label: 'Today', end: true },
+  { to: '/', label: 'Health', end: true },
   { to: '/call', label: 'Call', end: false },
-  { to: '/log', label: 'Log', end: false },
-  { to: '/sources', label: 'Sources', end: false },
+  { to: '/eat', label: 'Eat', end: false },
 ]
 
 /**
@@ -45,20 +45,23 @@ export function Nav() {
           </li>
         ))}
       </ul>
-      <button
-        onClick={() => void signOut()}
-        style={{
-          background: 'none',
-          border: 'none',
-          padding: 0,
-          font: 'inherit',
-          fontSize: '13px',
-          color: 'var(--ink-faint)',
-          cursor: 'pointer',
-        }}
-      >
-        Sign out
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+        <StatusDot />
+        <button
+          onClick={() => void signOut()}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            font: 'inherit',
+            fontSize: '13px',
+            color: 'var(--ink-faint)',
+            cursor: 'pointer',
+          }}
+        >
+          Sign out
+        </button>
+      </div>
     </nav>
   )
 }

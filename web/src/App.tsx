@@ -2,9 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/lib/auth'
 import { Nav } from '@/components/Nav'
 import { SignIn } from '@/routes/SignIn'
-import { Dashboard } from '@/routes/Dashboard'
+import { Health } from '@/routes/Health'
 import { Sources } from '@/routes/Sources'
-import { Log } from '@/routes/Log'
+import { Eat } from '@/routes/Eat'
 import { TheCall } from '@/routes/TheCall'
 import { Question } from '@/routes/Question'
 
@@ -36,7 +36,7 @@ function AppRoutes() {
         path="/"
         element={
           <Gate>
-            <Dashboard />
+            <Health />
           </Gate>
         }
       />
@@ -49,10 +49,10 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/log"
+        path="/eat"
         element={
           <Gate>
-            <Log />
+            <Eat />
           </Gate>
         }
       />

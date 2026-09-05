@@ -1,0 +1,25 @@
+{
+  "_source": "Synthesized from garminconnect/garth's documented field shapes (activityId, activityType.typeKey, startTimeGMT, duration in seconds, distance in meters) -- NOT recorded from a real account, unlike garmin_day.json. This app's own convention is to record real trimmed responses rather than invent data; that wasn't possible here without a live sync. Replace with a real response the first time sync_garmin.handler's activity sync actually runs against a live account, per the plan's verification step.",
+  "activities": [
+    {
+      "activityId": 987654321,
+      "activityName": "Afternoon Ride",
+      "activityType": { "typeId": 2, "typeKey": "cycling", "parentTypeId": null },
+      "startTimeLocal": "2026-09-03 15:41:12",
+      "startTimeGMT": "2026-09-03 19:41:12",
+      "duration": 2730.0,
+      "distance": 18452.3,
+      "calories": 612.0
+    },
+    {
+      "activityId": 987654322,
+      "activityName": "Strength",
+      "activityType": { "typeId": 13, "typeKey": "resistance_training", "parentTypeId": 29 },
+      "startTimeLocal": "2026-09-03 06:15:00",
+      "startTimeGMT": "2026-09-03 10:15:00",
+      "duration": 1800.0,
+      "distance": null,
+      "calories": 240.0
+    }
+  ]
+}

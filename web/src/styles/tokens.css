@@ -44,7 +44,8 @@
   /* ---- Shape ---- */
   --radius: 2px; /* buttons and inputs only — 0 everywhere else */
   --photo-preview-height: 240px; /* meal photo preview, Log screen */
-  --thumb-size: 40px; /* meal list thumbnail, Dashboard */
+  --thumb-size: 40px; /* meal list thumbnail, Eat */
+  --status-dot-size: 8px; /* Garmin freshness indicator, Nav */
   --screen-pad-x: 20px;
   --screen-pad-top: 24px;
 
