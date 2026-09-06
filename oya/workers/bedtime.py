@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from oya.clock import eastern_date
 from oya.integrations.calendar import get_snapshot
 from oya.integrations.webpush import send_push
-from oya.store.table import Entity, query_all
+from oya.store.table import Entity, put_item, query_all
 
 TITLE = "Off yo ass"
 TARGET_SLEEP_HOURS = 8.5
@@ -38,6 +39,9 @@ def build_nudge() -> str:
 
 def handler(event: dict, context: object) -> dict:
     body = build_nudge()
+    # One row per Eastern day, so it stays on The Call screen until the
+    # next night's nudge replaces it.
+    put_item(Entity.BEDTIME, eastern_date(), {"body": body})
     sent = sum(
         1
         for sub in query_all(Entity.SUB)

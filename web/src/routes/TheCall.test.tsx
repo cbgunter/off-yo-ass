@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TheCall } from './TheCall'
@@ -21,9 +21,25 @@ const CALL = {
   overridden: false,
 }
 
+// The screen fetches /call/today and /call/bedtime independently; default
+// both to "present" and let each test override the pieces it cares about.
+function mockGetResponses({
+  call = CALL as unknown,
+  bedtime = null as unknown,
+}: { call?: unknown; bedtime?: unknown } = {}) {
+  mockGet.mockImplementation((path: string) =>
+    Promise.resolve(path === '/call/bedtime' ? bedtime : call),
+  )
+}
+
+beforeEach(() => {
+  mockGet.mockReset()
+  mockPost.mockReset()
+})
+
 describe('TheCall', () => {
   it('walks through did_it -> feel -> done', async () => {
-    mockGet.mockResolvedValue(CALL)
+    mockGetResponses()
     mockPost.mockResolvedValue(undefined)
     const user = userEvent.setup()
 
@@ -43,7 +59,7 @@ describe('TheCall', () => {
   })
 
   it('walks through no -> skip reason -> done, with no feel tap', async () => {
-    mockGet.mockResolvedValue(CALL)
+    mockGetResponses()
     mockPost.mockResolvedValue(undefined)
     const user = userEvent.setup()
 
@@ -65,10 +81,21 @@ describe('TheCall', () => {
   })
 
   it('shows an empty state when no call has been generated yet', async () => {
-    mockGet.mockResolvedValue(null)
+    mockGetResponses({ call: null })
     render(<TheCall />)
     await waitFor(() =>
       expect(screen.getByText('No call yet. Check back at 15:45.')).toBeInTheDocument(),
     )
+  })
+
+  it('shows the standing bedtime nudge below the call', async () => {
+    mockGetResponses({ bedtime: { body: 'First thing tomorrow is at 9:00. Lights out by 0:30.' } })
+    render(<TheCall />)
+    await waitFor(() =>
+      expect(
+        screen.getByText('First thing tomorrow is at 9:00. Lights out by 0:30.'),
+      ).toBeInTheDocument(),
+    )
+    expect(screen.getByText('Tonight')).toBeInTheDocument()
   })
 })

@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 from anthropic import Anthropic
 
+from oya.clock import eastern_date
 from oya.domain.food import get_food_snapshot
 from oya.domain.recovery import RecoverySnapshot, get_recovery_snapshot
 from oya.integrations.calendar import CalendarSnapshot
@@ -228,7 +229,7 @@ def generate_call(*, exclude_activity: str | None = None) -> CoachResponse:
 
 
 def store_call(result: CoachResponse, *, overridden: bool = False) -> None:
-    today = datetime.now(UTC).date().isoformat()
+    today = eastern_date()
     existing = get_latest(Entity.CALL, sk=today)
     override_count = int(existing[0].get("override_count", 0)) + 1 if overridden and existing else 0
 

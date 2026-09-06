@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from oya.api.auth import User, get_current_user
+from oya.clock import eastern_date
 from oya.store.table import Entity, get_latest, put_item
 from oya.workers.coach import generate_call, store_call
 
@@ -38,6 +39,10 @@ class CallOut(BaseModel):
     overridden: bool = False
 
 
+class BedtimeOut(BaseModel):
+    body: str
+
+
 class CheckinIn(BaseModel):
     result: str
     skip_reason: str | None = None
@@ -60,9 +65,20 @@ def _to_call_out(item: dict) -> CallOut:
 
 @router.get("/today", response_model=None)
 def get_today(user: User = Depends(get_current_user)) -> CallOut | None:
-    today = datetime.now(UTC).date().isoformat()
-    items = get_latest(Entity.CALL, sk=today)
+    """The call that currently stands. It's the afternoon's prescription
+    until the coach writes the next one at 15:45 ET the following day --
+    deliberately not filtered to the current date, so it stays on screen
+    through the evening check-in and into the next morning."""
+    items = get_latest(Entity.CALL)
     return _to_call_out(items[0]) if items else None
+
+
+@router.get("/bedtime", response_model=None)
+def get_bedtime(user: User = Depends(get_current_user)) -> BedtimeOut | None:
+    """The bedtime nudge that currently stands -- shown on The Call screen
+    until the next night's 21:00 run replaces it."""
+    items = get_latest(Entity.BEDTIME)
+    return BedtimeOut(body=items[0]["body"]) if items else None
 
 
 @router.post("/checkin", status_code=204, response_model=None)
@@ -94,7 +110,7 @@ def not_tonight(user: User = Depends(get_current_user)) -> None:
 
 @router.post("/override")
 def override(user: User = Depends(get_current_user)) -> CallOut:
-    today = datetime.now(UTC).date().isoformat()
+    today = eastern_date()
     existing = get_latest(Entity.CALL, sk=today)
     exclude = existing[0]["prescription"]["activity"] if existing else None
 

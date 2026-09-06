@@ -115,7 +115,9 @@ class WorkersStack(Stack):
                 GOOGLE_CLIENT_SECRET_PARAM,
                 GOOGLE_REFRESH_TOKEN_PARAM,
             ],
-            grant_table_write=False,
+            # Writes one BEDTIME row per night so the nudge persists on the
+            # Call screen until the next run.
+            grant_table_write=True,
         )
 
         self._scheduled_function(

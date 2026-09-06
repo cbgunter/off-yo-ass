@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from oya.integrations.calendar import CalendarEvent, CalendarSnapshot
+from oya.store.table import Entity, get_latest
 from oya.workers.bedtime import handler
 
 SNAPSHOT = CalendarSnapshot(
@@ -16,7 +17,7 @@ SNAPSHOT = CalendarSnapshot(
 )
 
 
-def test_bedtime_push_deep_links_to_the_call():
+def test_bedtime_push_deep_links_to_the_call(dynamodb_table):
     """The 21:00 nudge has to open The Call on tap, not the home page --
     it's the same evening screen the 20:30 check-in points at. A missing
     url= silently falls back to "/" in send_push."""
@@ -31,3 +32,16 @@ def test_bedtime_push_deep_links_to_the_call():
     assert result["sent"] == 1
     _, kwargs = send_push.call_args
     assert kwargs["url"] == "/call"
+
+
+def test_bedtime_persists_the_nudge_for_the_call_screen(dynamodb_table):
+    with (
+        patch("oya.workers.bedtime.get_snapshot", return_value=SNAPSHOT),
+        patch("oya.workers.bedtime.query_all", return_value=[]),
+        patch("oya.workers.bedtime.send_push", return_value=True),
+    ):
+        result = handler({}, None)
+
+    stored = get_latest(Entity.BEDTIME)
+    assert stored and stored[0]["body"] == result["body"]
+    assert "Lights out by" in stored[0]["body"]

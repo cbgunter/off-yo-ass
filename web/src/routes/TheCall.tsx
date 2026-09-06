@@ -41,6 +41,8 @@ const SKIP_REASONS: { value: string; label: string }[] = [
   { value: 'something_hurt', label: 'Something hurt' },
 ]
 
+type Bedtime = { body: string }
+
 type CheckinResult = 'did_it' | 'partial' | 'no'
 type Feeling = 'easy' | 'about_right' | 'brutal'
 
@@ -51,6 +53,7 @@ type Stage = 'call' | 'awaiting_skip_reason' | 'awaiting_feel' | 'done'
 
 export function TheCall() {
   const [call, setCall] = useState<Call | null | undefined>(undefined)
+  const [bedtime, setBedtime] = useState<Bedtime | null>(null)
   const [error, setError] = useState(false)
   const [stage, setStage] = useState<Stage>('call')
   const [pendingResult, setPendingResult] = useState<CheckinResult | null>(null)
@@ -61,6 +64,10 @@ export function TheCall() {
       .get<Call | null>('/call/today')
       .then(setCall)
       .catch(() => setError(true))
+    api
+      .get<Bedtime | null>('/call/bedtime')
+      .then(setBedtime)
+      .catch(() => setBedtime(null))
   }, [])
 
   const pickResult = (value: CheckinResult) => {
@@ -216,6 +223,14 @@ export function TheCall() {
 
           {stage === 'done' && <p className="body-text">Logged.</p>}
         </div>
+      )}
+
+      {bedtime && (
+        <>
+          <hr className="hairline" />
+          <p className="field-label">Tonight</p>
+          <p className="body-text">{bedtime.body}</p>
+        </>
       )}
     </div>
   )

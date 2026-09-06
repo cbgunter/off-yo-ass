@@ -50,6 +50,7 @@ class Entity:
     SYNC_RUN = "SYNC_RUN"
     SUB = "SUB"
     CALL = "CALL"
+    BEDTIME = "BEDTIME"
     OUTCOME = "OUTCOME"
     FEEL = "FEEL"
     NOTE = "NOTE"

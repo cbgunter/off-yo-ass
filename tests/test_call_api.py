@@ -1,30 +1,31 @@
 from unittest.mock import patch
 
+from oya.clock import eastern_date
 from oya.prompts.coach import CoachResponse, Prescription
 from oya.store.table import Entity, get_latest, put_item, query_all
 
+_CALL_FIELDS = {
+    "headline": "Resting heart rate is 8 bpm over your 30-day average.",
+    "prescription": {
+        "activity": "walk",
+        "duration_min": 30,
+        "intensity": "easy",
+        "window": "17:30-18:30",
+    },
+    "why": "Sleep was short.",
+    "fallback": "A short walk works too.",
+    "skip_ok": False,
+    "overridden": False,
+    "override_count": 0,
+}
+
 
 def _seed_today_call(overridden: bool = False, override_count: int = 0) -> str:
-    from datetime import UTC, datetime
-
-    today = datetime.now(UTC).date().isoformat()
+    today = eastern_date()
     put_item(
         Entity.CALL,
         today,
-        {
-            "headline": "Resting heart rate is 8 bpm over your 30-day average.",
-            "prescription": {
-                "activity": "walk",
-                "duration_min": 30,
-                "intensity": "easy",
-                "window": "17:30-18:30",
-            },
-            "why": "Sleep was short.",
-            "fallback": "A short walk works too.",
-            "skip_ok": False,
-            "overridden": overridden,
-            "override_count": override_count,
-        },
+        {**_CALL_FIELDS, "overridden": overridden, "override_count": override_count},
     )
     return today
 
@@ -41,6 +42,29 @@ def test_call_today_returns_the_stored_call(authed_client):
     body = res.json()
     assert body["headline"] == "Resting heart rate is 8 bpm over your 30-day average."
     assert body["prescription"]["activity"] == "walk"
+
+
+def test_call_today_returns_the_most_recent_call_regardless_of_date(authed_client):
+    """The standing call is whatever the coach wrote last -- it must stay
+    on screen through the evening and into the next morning, not vanish
+    when the calendar date rolls over."""
+    put_item(Entity.CALL, "2026-09-01", {**_CALL_FIELDS, "headline": "Old call."})
+    put_item(Entity.CALL, "2026-09-02", {**_CALL_FIELDS, "headline": "Newer call."})
+
+    res = authed_client.get("/api/call/today")
+    assert res.json()["headline"] == "Newer call."
+
+
+def test_bedtime_is_none_before_any_nudge(authed_client):
+    assert authed_client.get("/api/call/bedtime").json() is None
+
+
+def test_bedtime_returns_the_latest_nudge(authed_client):
+    put_item(Entity.BEDTIME, "2026-09-01", {"body": "Old nudge."})
+    put_item(Entity.BEDTIME, "2026-09-02", {"body": "First thing tomorrow is at 9:00."})
+
+    res = authed_client.get("/api/call/bedtime")
+    assert res.json()["body"] == "First thing tomorrow is at 9:00."
 
 
 def test_checkin_writes_an_outcome(authed_client):
