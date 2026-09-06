@@ -46,6 +46,7 @@
   --photo-preview-height: 240px; /* meal photo preview, Log screen */
   --thumb-size: 40px; /* meal list thumbnail, Eat */
   --status-dot-size: 8px; /* Garmin freshness indicator, Nav */
+  --nav-height: 52px; /* fixed bottom tab bar, excludes the safe-area inset */
   --screen-pad-x: 20px;
   --screen-pad-top: 24px;
 

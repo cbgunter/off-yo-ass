@@ -31,8 +31,12 @@ export default defineConfig({
         start_url: '/',
         display: 'standalone',
         // Warm paper, per BRANDING.md — not white, matches the app shell.
+        // theme_color must match index.html's <meta name="theme-color">, or
+        // the installed PWA's status bar tints differently from the browser
+        // tab. --clay is reserved for the prescription/primary action, never
+        // chrome, so both are paper.
         background_color: '#F5F2EC',
-        theme_color: '#B4593C',
+        theme_color: '#F5F2EC',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

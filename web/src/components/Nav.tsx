@@ -9,43 +9,31 @@ const LINKS = [
 ]
 
 /**
- * Minimal top nav. Current page reads by weight, not color — --clay is
- * reserved for tonight's prescription and the primary action, never
- * wayfinding.
+ * Bottom tab bar for the three screens, plus a small top-right cluster for
+ * the two glance/rare controls (source status, sign out) that don't earn
+ * a tab. Both respect the phone's safe areas so nothing rides under the
+ * status bar or the gesture bar. Current page reads by weight, not colour
+ * -- --clay is reserved for tonight's prescription and the primary
+ * action, never wayfinding.
  */
 export function Nav() {
   const { signOut } = useAuth()
 
   return (
-    <nav
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: `var(--space-3) var(--screen-pad-x)`,
-        borderBottom: '1px solid var(--rule)',
-      }}
-    >
-      <ul style={{ display: 'flex', gap: 'var(--space-5)' }}>
-        {LINKS.map((link) => (
-          <li key={link.to}>
-            <NavLink
-              to={link.to}
-              end={link.end}
-              style={({ isActive }) => ({
-                fontFamily: 'var(--font-text)',
-                fontSize: '15px',
-                fontWeight: isActive ? 500 : 400,
-                color: isActive ? 'var(--ink)' : 'var(--ink-faint)',
-                textDecoration: 'none',
-              })}
-            >
-              {link.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+    <>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          zIndex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-4)',
+          padding: `calc(var(--space-3) + env(safe-area-inset-top)) calc(var(--space-4) + env(safe-area-inset-right)) var(--space-3) var(--space-4)`,
+          background: 'var(--paper)',
+        }}
+      >
         <StatusDot />
         <button
           onClick={() => void signOut()}
@@ -62,6 +50,48 @@ export function Nav() {
           Sign out
         </button>
       </div>
-    </nav>
+
+      <nav
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1,
+          borderTop: '1px solid var(--rule)',
+          background: 'var(--paper)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <ul
+          style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            height: 'var(--nav-height)',
+          }}
+        >
+          {LINKS.map((link) => (
+            <li key={link.to}>
+              <NavLink
+                to={link.to}
+                end={link.end}
+                style={({ isActive }) => ({
+                  display: 'block',
+                  fontFamily: 'var(--font-text)',
+                  fontSize: '15px',
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? 'var(--ink)' : 'var(--ink-faint)',
+                  textDecoration: 'none',
+                  padding: 'var(--space-2) var(--space-4)',
+                })}
+              >
+                {link.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
   )
 }

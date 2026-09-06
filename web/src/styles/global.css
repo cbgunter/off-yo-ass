@@ -48,7 +48,7 @@ img {
 .screen {
   min-height: 100%;
   padding: calc(var(--screen-pad-top) + env(safe-area-inset-top)) var(--screen-pad-x)
-    calc(var(--space-8) + env(safe-area-inset-bottom));
+    calc(var(--space-6) + var(--nav-height) + env(safe-area-inset-bottom));
   max-width: 480px;
   margin: 0 auto;
 }
