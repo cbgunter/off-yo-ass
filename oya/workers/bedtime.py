@@ -38,5 +38,9 @@ def build_nudge() -> str:
 
 def handler(event: dict, context: object) -> dict:
     body = build_nudge()
-    sent = sum(1 for sub in query_all(Entity.SUB) if send_push(sub["subscription"], TITLE, body))
+    sent = sum(
+        1
+        for sub in query_all(Entity.SUB)
+        if send_push(sub["subscription"], TITLE, body, url="/call")
+    )
     return {"status": "ok", "body": body, "sent": sent}
