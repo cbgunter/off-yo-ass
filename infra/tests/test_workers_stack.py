@@ -34,7 +34,7 @@ def _synth_workers_template() -> Template:
 # One entry per _scheduled_function call in WorkersStack.__init__, in the
 # same order — a mismatch here is itself a sign one of the two drifted.
 EXPECTED_SCHEDULES = {
-    "SyncGarmin": "cron(30 4 * * ? *)",
+    "SyncGarmin": "cron(0 8 * * ? *)",
     "Coach": "cron(45 15 * * ? *)",
     "Checkin": "cron(30 20 * * ? *)",
     "Bedtime": "cron(0 21 * * ? *)",

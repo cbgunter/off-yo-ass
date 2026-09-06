@@ -66,7 +66,7 @@ class WorkersStack(Stack):
         self._scheduled_function(
             "SyncGarmin",
             handler="oya.workers.sync_garmin.handler",
-            cron="cron(30 4 * * ? *)",  # 04:30 ET
+            cron="cron(0 8 * * ? *)",  # 08:00 ET
             environment={
                 **common_env,
                 "OYA_GARMIN_TOKENSTORE_PREFIX": GARMIN_TOKENSTORE_PREFIX,

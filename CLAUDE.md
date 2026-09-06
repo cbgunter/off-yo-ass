@@ -126,7 +126,7 @@ hour every DST transition). All five share `infra/stacks/workers_stack.py`'s
 
 | Time (ET) | Worker |
 |---|---|
-| 04:30 | `sync_garmin` |
+| 08:00 | `sync_garmin` |
 | 15:45 | `coach` — the daily call |
 | 20:30 | `checkin` — fixed-copy reminder, no LLM |
 | 21:00 | `bedtime` — deterministic nudge from tomorrow's first calendar event, no LLM |
