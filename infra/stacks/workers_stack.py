@@ -74,6 +74,8 @@ class WorkersStack(Stack):
             ssm_read=[VAPID_PRIVATE_KEY_PARAM],
             ssm_read_write_path=[GARMIN_TOKENSTORE_PREFIX],
             grant_table_write=True,
+            # Re-fetches a trailing week of days, each ~7 Garmin calls.
+            timeout=Duration.minutes(5),
         )
 
         self._scheduled_function(

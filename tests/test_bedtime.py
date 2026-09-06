@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 from oya.clock import EASTERN
 from oya.domain.recovery import MetricSnapshot, RecoverySnapshot
@@ -8,6 +7,13 @@ from oya.integrations.calendar import CalendarEvent, CalendarSnapshot
 from oya.store.table import Entity, get_latest
 from oya.workers import bedtime
 from oya.workers.bedtime import build_nudge, handler
+
+
+def _tomorrow_at(hour: int, minute: int = 0) -> datetime:
+    """build_nudge measures against datetime.now(), so a fixed calendar
+    date would drift in and out of "tomorrow" as the suite runs."""
+    d = (datetime.now(EASTERN) + timedelta(days=1)).date()
+    return datetime(d.year, d.month, d.day, hour, minute, tzinfo=EASTERN)
 
 
 def _metric(*, delta=None, delta_pct=None, building=False) -> MetricSnapshot:
@@ -59,14 +65,12 @@ def test_default_bedtime_is_eleven_pm_with_nothing_pulling_it_earlier():
 
 
 def test_a_late_first_event_tomorrow_does_not_move_bedtime():
-    two_pm = datetime(2026, 9, 6, 14, 0, tzinfo=EASTERN)
-    body = _run_build_nudge(calendar=_calendar(two_pm), recovery=_recovery())
+    body = _run_build_nudge(calendar=_calendar(_tomorrow_at(14, 0)), recovery=_recovery())
     assert body == "Lights out by 23:00."
 
 
 def test_an_early_start_pulls_bedtime_back_by_target_sleep():
-    six_thirty = datetime(2026, 9, 6, 6, 30, tzinfo=EASTERN)
-    body = _run_build_nudge(calendar=_calendar(six_thirty), recovery=_recovery())
+    body = _run_build_nudge(calendar=_calendar(_tomorrow_at(6, 30)), recovery=_recovery())
     assert body == "First thing tomorrow is at 6:30. Lights out by 22:00."
 
 
@@ -95,7 +99,7 @@ def test_building_baseline_produces_no_vitals_reason():
 def test_bedtime_push_deep_links_to_the_call(dynamodb_table):
     """The nudge has to open The Call on tap, not the home page -- a
     missing url= silently falls back to "/" in send_push."""
-    calendar = _calendar(datetime(2026, 9, 6, 7, 0, tzinfo=ZoneInfo("America/New_York")))
+    calendar = _calendar(_tomorrow_at(7, 0))
     with (
         patch.object(bedtime, "get_snapshot", return_value=calendar),
         patch.object(bedtime, "get_recovery_snapshot", return_value=_recovery()),

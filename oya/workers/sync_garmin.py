@@ -1,9 +1,16 @@
-"""Nightly Garmin sync. Pulls yesterday's recovery data and discrete
-activities, writes the daily entities, records a SYNC_RUN, evaluates
-source health, and sends one push if Garmin just went stale. One worker
-doing sync-then-healthcheck-then-alert, not three separate jobs — invoked
-by the EventBridge Scheduler rule in infra/stacks/workers_stack.py at
-04:30 America/New_York, every day, DST included.
+"""Nightly Garmin sync. Pulls a trailing window of recovery data and
+yesterday's discrete activities, writes the daily entities, records a
+SYNC_RUN, evaluates source health, and sends one push if Garmin just went
+stale. One worker doing sync-then-healthcheck-then-alert, not three
+separate jobs — invoked by the EventBridge Scheduler rule in
+infra/stacks/workers_stack.py at 08:00 America/New_York, every day, DST
+included.
+
+The window is a trailing re-fetch, not just yesterday: Garmin posts
+resting HR and steps promptly but sleep and HRV for a night often aren't
+processed until a day or two later, and a day missed at first sync would
+otherwise never be revisited. put_item overwrites by (pk, sk), so
+re-fetching a day already stored is a harmless no-op.
 """
 
 from __future__ import annotations
@@ -23,6 +30,7 @@ from oya.integrations.webpush import send_push
 from oya.store.table import Entity, get_latest, put_item, query_all
 
 SOURCE = "garmin"
+BACKFILL_DAYS = 7
 
 
 def _now() -> datetime:
@@ -129,6 +137,7 @@ def _check_and_notify_health(success: bool) -> None:
 
 def handler(event: dict, context: object) -> dict:
     yesterday = (_now() - timedelta(days=1)).date()
+    window = [yesterday - timedelta(days=i) for i in range(BACKFILL_DAYS)]
 
     try:
         metrics = fetch_day(yesterday)
@@ -147,6 +156,15 @@ def handler(event: dict, context: object) -> dict:
         raise
 
     rows = _write_metrics(metrics)
+
+    # The rest of the trailing window is best-effort: one stale day
+    # failing to parse is not "the source went dark" — that verdict rides
+    # entirely on yesterday, fetched above.
+    for day in window[1:]:
+        try:
+            rows += _write_metrics(fetch_day(day))
+        except Exception as exc:  # noqa: BLE001
+            _record_sync_run("backfill_error", error=f"{day.isoformat()}: {exc}")
 
     # Real activity sync -- new and unverified against a real account, in
     # a way fetch_day's field paths already have been. A parsing surprise

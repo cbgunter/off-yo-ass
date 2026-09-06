@@ -201,3 +201,8 @@ the user, locally, never fed credentials through the assistant — `scripts/boot
 opens the user's own browser to Google's consent screen and catches the redirect on
 `localhost:8080`; nothing is typed into a terminal. `scripts/build_lambda.sh` and
 `scripts/resolve_weather_grid.py` are plain config/build steps with no credentials involved.
+`scripts/backfill_garmin.py` (needs the user's AWS creds, run locally) re-fetches a stretch of
+past days one at a time so `oya/domain/recovery.py`'s 30-day baselines can establish without
+waiting a month; the nightly `sync_garmin` also re-fetches a trailing `BACKFILL_DAYS` window each
+run, since Garmin posts sleep/HRV a day or two behind resting HR and a day missed at first sync
+was otherwise never revisited.

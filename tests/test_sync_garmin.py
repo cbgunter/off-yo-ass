@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from oya.integrations.garmin import DayMetrics, GarminActivity
 from oya.store.table import Entity, query_all, query_range
-from oya.workers.sync_garmin import _write_activities, handler
+from oya.workers.sync_garmin import BACKFILL_DAYS, _write_activities, handler
 
 RIDE = GarminActivity(
     activity_id=1,
@@ -73,3 +73,41 @@ def test_handler_writes_real_garmin_activities_on_success(dynamodb_table):
     assert len(items) == 1
     assert items[0]["source"] == "garmin"
     assert items[0]["activity_type"] == "cycling"
+
+
+def test_handler_backfills_a_trailing_window_of_days(dynamodb_table):
+    """Garmin posts sleep and HRV a day or two after resting HR, so each
+    run re-fetches a trailing window instead of only yesterday."""
+    with (
+        patch(
+            "oya.workers.sync_garmin.fetch_day",
+            side_effect=lambda day: DayMetrics(day=day, resting_heart_rate=60.0),
+        ),
+        patch("oya.workers.sync_garmin.fetch_activities", return_value=[]),
+    ):
+        handler({}, None)
+
+    # One RHR row per distinct day in the window.
+    assert len(query_all(Entity.RHR)) == BACKFILL_DAYS
+
+
+def test_handler_survives_one_bad_day_in_the_backfill_window(dynamodb_table):
+    seen: list = []
+
+    def fake_fetch(day):
+        seen.append(day)
+        if len(seen) == 3:  # a day partway through the window fails to parse
+            raise RuntimeError("garbled sleep payload")
+        return DayMetrics(day=day, resting_heart_rate=60.0)
+
+    with (
+        patch("oya.workers.sync_garmin.fetch_day", side_effect=fake_fetch),
+        patch("oya.workers.sync_garmin.fetch_activities", return_value=[]),
+    ):
+        result = handler({}, None)
+
+    assert result["status"] == "ok"
+    statuses = {r["status"] for r in query_all(Entity.SYNC_RUN)}
+    assert "backfill_error" in statuses
+    assert "ok" in statuses
+    assert len(query_all(Entity.RHR)) == BACKFILL_DAYS - 1
