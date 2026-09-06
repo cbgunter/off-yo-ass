@@ -1,14 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+
+function formatSaved(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 /**
  * The always-available free-text field. Parsed server-side into standing
  * context with a type and an expiry -- this component only has to submit
- * the raw text and report back what happened.
+ * the raw text and report back what happened. The "last saved" line is
+ * sourced from the server so it survives a reload or a second device.
  */
 export function NoteBox() {
   const [text, setText] = useState('')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle')
+  const [lastSaved, setLastSaved] = useState<string | null>(null)
+
+  useEffect(() => {
+    api
+      .get<{ when: string } | null>('/notes/latest')
+      .then((res) => setLastSaved(res?.when ?? null))
+      .catch(() => setLastSaved(null))
+  }, [])
 
   const submit = async () => {
     if (!text.trim()) return
@@ -16,7 +36,8 @@ export function NoteBox() {
     try {
       await api.post('/notes', { text })
       setText('')
-      setStatus('saved')
+      setStatus('idle')
+      setLastSaved(new Date().toISOString())
     } catch {
       setStatus('error')
     }
@@ -35,11 +56,17 @@ export function NoteBox() {
         }}
         placeholder="Back is sore. Denver Tuesday to Thursday. Beach in six weeks."
       />
-      <button className="btn btn-secondary" disabled={status === 'saving'} onClick={() => void submit()}>
+      <button
+        className="btn btn-secondary"
+        disabled={status === 'saving'}
+        onClick={() => void submit()}
+      >
         Save
       </button>
-      {status === 'saved' && <p className="timestamp">Saved.</p>}
       {status === 'error' && <p className="empty-state">Could not save. Try again.</p>}
+      {status !== 'error' && lastSaved && (
+        <p className="timestamp">Last saved {formatSaved(lastSaved)}.</p>
+      )}
     </div>
   )
 }

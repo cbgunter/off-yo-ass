@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from oya.api.auth import User, get_current_user
-from oya.clock import eastern_date
+from oya.clock import EASTERN, eastern_date
 from oya.store.table import Entity, get_latest, put_item
 from oya.workers.coach import generate_call, store_call
 
@@ -37,6 +37,7 @@ class CallOut(BaseModel):
     fallback: str
     skip_ok: bool
     overridden: bool = False
+    checked_in: bool = False
 
 
 class BedtimeOut(BaseModel):
@@ -52,6 +53,23 @@ class FeelIn(BaseModel):
     feel: str
 
 
+def _checked_in(call: dict) -> bool:
+    """True once a check-in (or "not tonight") has been logged for this
+    call. An override writes a fresh call with a later created_at, which
+    reopens the check-in."""
+    outcomes = get_latest(Entity.OUTCOME)
+    if not outcomes:
+        return False
+    outcome_sk = outcomes[0]["sk"]
+
+    created_at = call.get("created_at")
+    if created_at:
+        return outcome_sk >= created_at
+    # Calls written before created_at existed: fall back to the ET day.
+    outcome_day = datetime.fromisoformat(outcome_sk).astimezone(EASTERN).date().isoformat()
+    return outcome_day >= call["sk"]
+
+
 def _to_call_out(item: dict) -> CallOut:
     return CallOut(
         headline=item["headline"],
@@ -60,6 +78,7 @@ def _to_call_out(item: dict) -> CallOut:
         fallback=item["fallback"],
         skip_ok=bool(item.get("skip_ok", False)),
         overridden=bool(item.get("overridden", False)),
+        checked_in=_checked_in(item),
     )
 
 

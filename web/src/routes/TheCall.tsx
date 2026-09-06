@@ -15,6 +15,7 @@ type Call = {
   fallback: string
   skip_ok: boolean
   overridden: boolean
+  checked_in: boolean
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -151,7 +152,9 @@ export function TheCall() {
           <hr className="hairline" />
           <p className="timestamp">{call.fallback}</p>
 
-          {stage === 'call' && (
+          {call.checked_in && <p className="body-text">Logged.</p>}
+
+          {!call.checked_in && stage === 'call' && (
             <>
               <div className="btn-row">
                 {(['did_it', 'partial', 'no'] as CheckinResult[]).map((value) => (
@@ -185,7 +188,7 @@ export function TheCall() {
             </>
           )}
 
-          {stage === 'awaiting_skip_reason' && (
+          {!call.checked_in && stage === 'awaiting_skip_reason' && (
             <div className="stack">
               <p className="body-text">Why not?</p>
               <div className="btn-row" style={{ flexWrap: 'wrap' }}>
@@ -203,7 +206,7 @@ export function TheCall() {
             </div>
           )}
 
-          {stage === 'awaiting_feel' && (
+          {!call.checked_in && stage === 'awaiting_feel' && (
             <div className="stack">
               <p className="body-text">How did it feel?</p>
               <div className="btn-row">
@@ -221,7 +224,7 @@ export function TheCall() {
             </div>
           )}
 
-          {stage === 'done' && <p className="body-text">Logged.</p>}
+          {!call.checked_in && stage === 'done' && <p className="body-text">Logged.</p>}
         </div>
       )}
 

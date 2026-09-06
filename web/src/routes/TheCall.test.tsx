@@ -19,6 +19,7 @@ const CALL = {
   fallback: 'A short walk works too.',
   skip_ok: false,
   overridden: false,
+  checked_in: false,
 }
 
 // The screen fetches /call/today and /call/bedtime independently; default
@@ -86,6 +87,16 @@ describe('TheCall', () => {
     await waitFor(() =>
       expect(screen.getByText('No call yet. Check back at 15:45.')).toBeInTheDocument(),
     )
+  })
+
+  it('shows only the logged state when the call has already been checked in', async () => {
+    mockGetResponses({ call: { ...CALL, checked_in: true } })
+    render(<TheCall />)
+
+    await waitFor(() => expect(screen.getByText(CALL.headline)).toBeInTheDocument())
+    expect(screen.getByText('Logged.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Did it' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Give me something else' })).not.toBeInTheDocument()
   })
 
   it('shows the standing bedtime nudge below the call', async () => {

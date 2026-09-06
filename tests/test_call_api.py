@@ -19,6 +19,16 @@ _CALL_FIELDS = {
     "override_count": 0,
 }
 
+_FAKE_OVERRIDE = CoachResponse(
+    headline="Stress is 15 points over your 30-day average.",
+    prescription=Prescription(
+        activity="row_c2", duration_min=20, intensity="easy", window="18:00-18:30"
+    ),
+    why="High stress, short sleep.",
+    fallback="Ten minutes on the erg still counts.",
+    skip_ok=False,
+)
+
 
 def _seed_today_call(overridden: bool = False, override_count: int = 0) -> str:
     today = eastern_date()
@@ -53,6 +63,33 @@ def test_call_today_returns_the_most_recent_call_regardless_of_date(authed_clien
 
     res = authed_client.get("/api/call/today")
     assert res.json()["headline"] == "Newer call."
+
+
+def test_call_today_is_not_checked_in_before_a_response(authed_client):
+    _seed_today_call()
+    assert authed_client.get("/api/call/today").json()["checked_in"] is False
+
+
+def test_call_today_reports_checked_in_after_a_checkin(authed_client):
+    _seed_today_call()
+    authed_client.post("/api/call/checkin", json={"result": "did_it"})
+    assert authed_client.get("/api/call/today").json()["checked_in"] is True
+
+
+def test_call_today_reports_checked_in_after_not_tonight(authed_client):
+    _seed_today_call()
+    authed_client.post("/api/call/not-tonight")
+    assert authed_client.get("/api/call/today").json()["checked_in"] is True
+
+
+def test_override_reopens_the_checkin(authed_client):
+    _seed_today_call()
+    authed_client.post("/api/call/checkin", json={"result": "no", "skip_reason": "too_tired"})
+
+    with patch("oya.api.call.generate_call", return_value=_FAKE_OVERRIDE):
+        assert authed_client.post("/api/call/override").json()["checked_in"] is False
+
+    assert authed_client.get("/api/call/today").json()["checked_in"] is False
 
 
 def test_bedtime_is_none_before_any_nudge(authed_client):
@@ -117,17 +154,7 @@ def test_not_tonight_records_an_override_outcome(authed_client):
 def test_override_replaces_todays_call_without_a_real_claude_call(authed_client):
     today = _seed_today_call(overridden=False, override_count=0)
 
-    fake_result = CoachResponse(
-        headline="Stress is 15 points over your 30-day average.",
-        prescription=Prescription(
-            activity="row_c2", duration_min=20, intensity="easy", window="18:00-18:30"
-        ),
-        why="High stress, short sleep.",
-        fallback="Ten minutes on the erg still counts.",
-        skip_ok=False,
-    )
-
-    with patch("oya.api.call.generate_call", return_value=fake_result) as mock_generate:
+    with patch("oya.api.call.generate_call", return_value=_FAKE_OVERRIDE) as mock_generate:
         res = authed_client.post("/api/call/override")
 
     assert res.status_code == 200

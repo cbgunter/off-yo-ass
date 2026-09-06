@@ -244,6 +244,9 @@ def store_call(result: CoachResponse, *, overridden: bool = False) -> None:
             "skip_ok": result.skip_ok,
             "overridden": overridden,
             "override_count": override_count,
+            # When this call was generated, so the API can tell whether a
+            # check-in came after it -- an override resets that.
+            "created_at": datetime.now(UTC).isoformat(),
         },
     )
 

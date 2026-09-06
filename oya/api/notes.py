@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from oya.api.auth import User, get_current_user
 from oya.settings import get_settings
-from oya.store.table import Entity, put_item, query_all
+from oya.store.table import Entity, get_latest, put_item, query_all
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
@@ -47,6 +47,10 @@ class NoteOut(BaseModel):
     type: str
     expires_at: str | None
     pinned: bool
+    when: str
+
+
+class LatestNote(BaseModel):
     when: str
 
 
@@ -96,6 +100,15 @@ def list_notes(user: User = Depends(get_current_user)) -> list[NoteOut]:
         )
         for n in active
     ]
+
+
+@router.get("/latest", response_model=None)
+def latest_note(user: User = Depends(get_current_user)) -> LatestNote | None:
+    """When the most recent note was saved -- lets the note box show a
+    durable 'last saved' line instead of a confirmation that vanishes on
+    reload or on another device."""
+    notes = get_latest(Entity.NOTE)
+    return LatestNote(when=notes[0]["sk"]) if notes else None
 
 
 @router.post("", status_code=201)

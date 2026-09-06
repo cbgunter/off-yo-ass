@@ -71,6 +71,22 @@ def test_list_notes_always_includes_pinned_notes(authed_client):
     assert res.json()[0]["text"] == "Never suggest golf."
 
 
+def test_latest_note_is_none_before_any_note(authed_client):
+    assert authed_client.get("/api/notes/latest").json() is None
+
+
+def test_latest_note_returns_the_most_recent_timestamp(authed_client):
+    now = datetime.now(UTC)
+    older = (now - timedelta(hours=3)).isoformat()
+    newer = now.isoformat()
+    fields = {"type": "x", "expires_at": None, "pinned": False}
+    put_item(Entity.NOTE, older, {"text": "first", **fields})
+    put_item(Entity.NOTE, newer, {"text": "second", **fields})
+
+    assert authed_client.get("/api/notes/latest").json()["when"] == newer
+
+
 def test_notes_require_sign_in(client):
     assert client.get("/api/notes").status_code == 401
+    assert client.get("/api/notes/latest").status_code == 401
     assert client.post("/api/notes", json={"text": "hi"}).status_code == 401
