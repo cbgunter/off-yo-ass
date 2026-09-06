@@ -45,7 +45,6 @@ class Entity:
     BODYBATT = "BODYBATT"
     STEPS = "STEPS"
     WEIGHT = "WEIGHT"
-    BP = "BP"
     ACTIVITY = "ACTIVITY"
     SOURCE_HEALTH = "SOURCE_HEALTH"
     SYNC_RUN = "SYNC_RUN"

@@ -46,9 +46,6 @@ def _format_recovery(snap: RecoverySnapshot) -> str:
                 f"{metric.label}: {metric.today:.0f}{unit} "
                 f"({sign}{metric.delta:.0f} vs 30d avg {metric.average:.0f})"
             )
-    if snap.blood_pressure:
-        bp = snap.blood_pressure
-        lines.append(f"Blood pressure: {bp.systolic}/{bp.diastolic}")
     return "\n".join(lines)
 
 

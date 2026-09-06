@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from oya.api.auth import User, get_current_user
-from oya.domain.recovery import BloodPressureSnapshot, MetricSnapshot, get_recovery_snapshot
+from oya.domain.recovery import MetricSnapshot, get_recovery_snapshot
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -30,14 +30,6 @@ class MetricPoint(BaseModel):
     building: bool
 
 
-class BloodPressureReading(BaseModel):
-    systolic: int
-    diastolic: int
-    when: str
-    delta_systolic: int | None = None
-    delta_diastolic: int | None = None
-
-
 class DashboardResponse(BaseModel):
     sleep: MetricPoint
     resting_heart_rate: MetricPoint
@@ -46,7 +38,6 @@ class DashboardResponse(BaseModel):
     body_battery: MetricPoint
     steps: MetricPoint
     weight: MetricPoint
-    blood_pressure: BloodPressureReading | None = None
 
 
 def _to_point(s: MetricSnapshot) -> MetricPoint:
@@ -62,16 +53,6 @@ def _to_point(s: MetricSnapshot) -> MetricPoint:
     )
 
 
-def _to_reading(bp: BloodPressureSnapshot) -> BloodPressureReading:
-    return BloodPressureReading(
-        systolic=bp.systolic,
-        diastolic=bp.diastolic,
-        when=bp.when,
-        delta_systolic=bp.delta_systolic,
-        delta_diastolic=bp.delta_diastolic,
-    )
-
-
 @router.get("")
 def get_dashboard(user: User = Depends(get_current_user)) -> DashboardResponse:
     snap = get_recovery_snapshot()
@@ -83,5 +64,4 @@ def get_dashboard(user: User = Depends(get_current_user)) -> DashboardResponse:
         body_battery=_to_point(snap.body_battery),
         steps=_to_point(snap.steps),
         weight=_to_point(snap.weight),
-        blood_pressure=_to_reading(snap.blood_pressure) if snap.blood_pressure else None,
     )

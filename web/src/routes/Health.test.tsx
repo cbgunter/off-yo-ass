@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { Health } from './Health'
 
 // vi.mock factories are hoisted above the rest of the file, so a fixture
@@ -24,7 +23,6 @@ const { DATA, mockGet, mockPost } = vi.hoisted(() => ({
     body_battery: { label: 'Body battery', unit: null, today: null, days: 0, building: true },
     steps: { label: 'Steps', unit: null, today: null, days: 0, building: true },
     weight: { label: 'Weight', unit: 'lbs', today: null, days: 0, building: true },
-    blood_pressure: null,
   },
   mockGet: vi.fn(),
   mockPost: vi.fn(),
@@ -52,49 +50,5 @@ describe('Health', () => {
       expect(screen.getAllByText(/building baseline/).length).toBeGreaterThan(0),
     )
     expect(screen.getByText('building baseline, 5 of 30 nights')).toBeInTheDocument()
-  })
-
-  it('shows a no-data state for blood pressure, pointing at logging on this same screen', async () => {
-    render(<Health />)
-    await waitFor(() =>
-      expect(screen.getByText('No readings yet. Log one below.')).toBeInTheDocument(),
-    )
-  })
-
-  it('logs an activity via the relocated quick-log buttons', async () => {
-    mockPost.mockResolvedValue(undefined)
-    const user = userEvent.setup()
-    render(<Health />)
-    await waitFor(() => expect(screen.getByText('68')).toBeInTheDocument())
-
-    await user.click(screen.getByRole('button', { name: 'Split wood' }))
-    // NoteBox (further down the same screen) has its own "Save" button --
-    // the quick-log form's is the first of the two in DOM order.
-    await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
-
-    await waitFor(() =>
-      expect(mockPost).toHaveBeenCalledWith('/quicklog/activity', {
-        activity_type: 'wood_splitting',
-        duration_min: 30,
-      }),
-    )
-    await waitFor(() => expect(screen.getByText('Split wood logged.')).toBeInTheDocument())
-  })
-
-  it('logs blood pressure via the relocated quick-log button', async () => {
-    mockPost.mockResolvedValue(undefined)
-    const user = userEvent.setup()
-    render(<Health />)
-    await waitFor(() => expect(screen.getByText('68')).toBeInTheDocument())
-
-    await user.click(screen.getByRole('button', { name: 'Blood pressure' }))
-    await user.type(screen.getByLabelText('Systolic'), '120')
-    await user.type(screen.getByLabelText('Diastolic'), '80')
-    await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
-
-    await waitFor(() =>
-      expect(mockPost).toHaveBeenCalledWith('/quicklog/bp', { systolic: 120, diastolic: 80 }),
-    )
-    await waitFor(() => expect(screen.getByText('Blood pressure logged.')).toBeInTheDocument())
   })
 })

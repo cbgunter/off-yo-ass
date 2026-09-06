@@ -57,7 +57,7 @@ npm run dev                               # vite dev server, proxies /api to loc
 npm run build                             # tsc -b && vite build
 npm run lint                              # eslint .
 npm run test                              # vitest run
-npx vitest run src/routes/Log.test.tsx    # one file
+npx vitest run src/routes/Health.test.tsx # one file
 ```
 
 ### CI (`.github/workflows/ci.yml`)

@@ -108,10 +108,6 @@ visual weight; the app has no opinion until it has data. Outline, 2px radius,
 1px `--rule`. Minimum height 48px, minimum touch target 44px. Full-width on
 phone. Max one primary per screen.
 
-**Quick-log.** Yard work, wood splitting, garden walking, manual BP get the same
-treatment as Peloton and rowing. No secondary styling, no "other" bucket. They
-are prescriptions, not consolation prizes.
-
 **Receipts (Sunday).** Plain tables and 1px line charts. Hairline rules, tabular
 figures, no fills, no legends where a direct label works. Correlations stated as
 sentences with numbers, not as scores or grades.

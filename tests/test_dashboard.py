@@ -22,8 +22,6 @@ def test_dashboard_reports_building_with_no_history(authed_client):
         assert metric["today"] is None
         assert metric["days"] == 0
 
-    assert body["blood_pressure"] is None
-
 
 def test_dashboard_reports_building_with_partial_history(authed_client):
     # 10 days including today is well short of the 30-day minimum.
@@ -51,19 +49,6 @@ def test_dashboard_computes_a_real_baseline_at_30_days(authed_client):
     assert metric["average"] == 60.0
     assert metric["delta"] == 8.0
     assert metric["days"] == 30
-
-
-def test_dashboard_blood_pressure_reports_trend(authed_client):
-    authed_client.post("/api/quicklog/bp", json={"systolic": 130, "diastolic": 85})
-    authed_client.post("/api/quicklog/bp", json={"systolic": 122, "diastolic": 80})
-
-    res = authed_client.get("/api/dashboard")
-    bp = res.json()["blood_pressure"]
-
-    assert bp["systolic"] == 122
-    assert bp["diastolic"] == 80
-    assert bp["delta_systolic"] == -8
-    assert bp["delta_diastolic"] == -5
 
 
 def test_dashboard_requires_sign_in(client):
